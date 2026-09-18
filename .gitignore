@@ -1,0 +1,35 @@
+# dependencies
+/node_modules
+
+# build output
+/dist
+*.tsbuildinfo
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+
+# test coverage
+/coverage
+
+# editors / OS
+.DS_Store
+.idea
+.vscode
+*.swp
+
+# --- local working material, not part of the deliverable ---
+
+# Takumi plans, phase files and agent reports
+/plans/
+
+# Takumi docs graph, regenerated on demand
+graphify-out/
+
+# session-local agent settings
+/.claude/
