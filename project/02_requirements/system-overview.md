@@ -1,52 +1,53 @@
 # System Overview
 
-> The service/product view: what is being built, why, and what it is meant to achieve.
-> KPIs and success criteria are **out of scope** here — they live in `project/01_management/overview.md`
-> §2 and are owned by `pm-plan-project` (PLAN).
+> Góc nhìn sản phẩm: xây cái gì, vì sao, và nhằm đạt được gì.
+> KPI và tiêu chí thành công **không thuộc file này** — chúng nằm ở `project/01_management/overview.md`
+> §2, do `pm-plan-project` (PLAN) quản.
 
 ## 1. Service Overview
 
-A hotel management system delivered as a **backend REST API only** — there is no frontend in scope.
-Visitors browse rooms and search for availability without signing in. Registered users create booking
-requests, review their own request history, and cancel a request while it is still unconfirmed.
-Administrators review those requests and approve or reject them, with a reason attached on rejection.
+Hệ thống quản lý khách sạn, giao dưới dạng **REST API backend, không có frontend**.
+Visitor xem danh sách phòng và tìm phòng trống mà không cần đăng nhập. User đã đăng ký thì tạo
+booking request, xem lại lịch sử request của chính mình, và huỷ request khi chưa ai quyết.
+Admin duyệt hoặc từ chối các request đó — từ chối thì bắt buộc kèm lý do.
 
-This is the **Mock Project of the NestJS training track**: the deliverable exists to demonstrate the
-engineering skills on the training checklist and to be reviewed by a mentor, not to serve a live hotel.
+Đây là **Mock Project của lộ trình training NestJS**: sản phẩm làm ra để thể hiện các kỹ năng
+trong checklist và để mentor review, không phải để phục vụ một khách sạn thật.
 
 | Item | Value |
 | --- | --- |
-| Target platform | Web API (REST / JSON), backend only — no UI is built |
-| Primary users | Visitor (unauthenticated) / User (registered) / Admin (hotel operator) |
-| Where the data is mastered | All data is entered and owned by this system; no external system integration |
+| Target platform | Web API (REST / JSON), chỉ backend — không dựng UI |
+| Primary users | Visitor (chưa đăng nhập) / User (đã đăng ký) / Admin (người vận hành khách sạn) |
+| Where the data is mastered | Toàn bộ dữ liệu nhập và lưu trong hệ thống này; không tích hợp hệ thống ngoài |
 
 ## 2. Background & Problems
 
-> **Note:** the business context below is a *hypothesis* constructed for the training Mock Project.
-> It does not come from a real client and must not be read as confirmed customer information.
+> **Lưu ý:** bối cảnh nghiệp vụ dưới đây là *giả thuyết* dựng cho bài Mock Project.
+> Nó không đến từ khách hàng thật và không được đọc như thông tin đã xác nhận.
 
 | # | Current problem | Impact |
 | --- | --- | --- |
-| 1 | Booking requests arrive by phone and are written into a paper ledger; two staff members can take two requests for the same room over the same dates | The guest arrives to find no room available — apology, re-accommodation or refund |
-| 2 | Guests cannot check for themselves which rooms are free on which dates and must call the front desk | The front desk is overloaded at peak hours; guests calling out of hours reach nobody and book elsewhere |
-| 3 | Requests are confirmed manually and the guest has no way to see the state of their own request | Guests call back repeatedly; the switchboard spends its time answering the same question |
-| 4 | When a request is rejected the reason is only given verbally and is recorded nowhere | The guest does not understand why; later nobody can trace who rejected it or on what grounds |
-| 5 | Cancelling a request requires a phone call during office hours | Guests cancel late or not at all; the room is held for nothing and the sale is lost |
+| 1 | Booking request nhận qua điện thoại và ghi vào sổ giấy; hai nhân viên có thể nhận hai request cho cùng một phòng, cùng khoảng ngày | Khách tới nơi mới biết không có phòng — phải xin lỗi, bố trí bù hoặc hoàn tiền |
+| 2 | Khách không tự tra được phòng nào trống ngày nào, phải gọi lễ tân | Lễ tân quá tải giờ cao điểm; khách gọi ngoài giờ không ai nghe nên bỏ sang khách sạn khác |
+| 3 | Request được xác nhận thủ công, khách không có cách nào tự xem request của mình đang ở đâu | Khách gọi lại nhiều lần; tổng đài tốn thời gian trả lời cùng một câu |
+| 4 | Khi từ chối request, lý do chỉ nói miệng, không lưu ở đâu | Khách không hiểu vì sao; về sau không ai tra lại được ai từ chối và vì lý do gì |
+| 5 | Muốn huỷ request phải gọi điện trong giờ hành chính | Khách huỷ muộn hoặc không huỷ; phòng bị giữ vô ích, mất cơ hội bán |
 
 ## 3. Objectives & Value Delivered
 
 | # | Objective | Value delivered | Related problem # |
 | --- | --- | --- | --- |
-| 1 | Let guests search room availability by date range and by amenity | Self-service around the clock; far fewer availability calls to the front desk | 2 |
-| 2 | Reject overlapping bookings at the moment the request is recorded | No guest arrives to find their room already taken | 1 |
-| 3 | Let users see their own booking history and its current state | Guests check for themselves instead of calling | 3 |
-| 4 | Require a reason on rejection and notify the user by email automatically | The guest learns the outcome and the reason at once; the decision leaves a trace | 3, 4 |
-| 5 | Let users cancel a request while it is still unconfirmed | The room is released early and can be sold again | 5 |
+| 1 | Cho khách tự tra phòng trống theo khoảng ngày và theo amenity | Khách tự phục vụ 24/7; lễ tân bớt hẳn cuộc gọi tra cứu | 2 |
+| 2 | Từ chối booking bị overlap ngay tại thời điểm ghi nhận request | Không còn cảnh khách tới nơi mà phòng đã có người | 1 |
+| 3 | Cho user xem lịch sử và trạng thái request của chính mình | Khách tự kiểm tra, không phải gọi hỏi | 3 |
+| 4 | Bắt buộc nhập lý do khi từ chối, và gửi mail thông báo tự động | Khách biết kết quả ngay và biết vì sao; quyết định để lại dấu vết | 3, 4 |
+| 5 | Cho user tự huỷ request khi chưa ai quyết | Phòng được trả lại sớm và bán lại được | 5 |
 
 ## 4. Revision History
 
 | Date | Updated by | Content |
 | --- | --- | --- |
-| 2026-09-18 | pm-gather-requirements skill | Created; §1 Service Overview filled in |
-| 2026-09-18 | pm-gather-requirements skill | §2 Background & Problems and §3 Objectives filled in (business context is a stated hypothesis) |
-| 2026-09-18 | pm-gather-requirements skill | ROLE-001 renamed Guest → Visitor; "guest" now only ever means a hotel customer |
+| 2026-09-18 | pm-gather-requirements skill | Tạo mới; điền §1 Service Overview |
+| 2026-09-18 | pm-gather-requirements skill | Điền §2 Background & Problems và §3 Objectives (bối cảnh nghiệp vụ là giả thuyết, đã ghi rõ) |
+| 2026-09-18 | pm-gather-requirements skill | Đổi tên ROLE-001 Guest → Visitor; từ "guest" từ nay chỉ còn nghĩa khách lưu trú |
+| 2026-09-19 | — | Dịch phần diễn giải sang tiếng Việt; heading và tên cột giữ tiếng Anh |

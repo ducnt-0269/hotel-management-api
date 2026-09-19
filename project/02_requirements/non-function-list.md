@@ -1,38 +1,39 @@
 # Non-Functional Requirements
 
-> Categories that do not apply to this project are marked **out of scope** with a reason rather than being
-> filled in mechanically. Numeric targets are only written in once the user has approved them.
-> Compatibility targets recorded here are authoritative for `pm-plan-test` (TEST) §3.1.
+> Nhóm nào không áp dụng cho dự án này thì ghi rõ **out of scope** kèm lý do, thay vì điền máy móc
+> cho đủ. Con số chỉ được ghi vào khi user đã duyệt.
+> Các yêu cầu tương thích ghi ở đây là căn cứ cho `pm-plan-test` (TEST) §3.1.
 >
-> Scoping note: this is a training Mock Project that runs locally in Docker and is never deployed to
-> production. The requirements kept below are the ones the delivery is actually judged on; the rest are
-> listed in §2 with the reason they do not apply.
+> Ghi chú phạm vi: đây là Mock Project training, chạy local trong Docker và không bao giờ deploy
+> production. Những yêu cầu giữ lại dưới đây là những thứ bài nộp thực sự bị chấm; phần còn lại
+> liệt kê ở §2 kèm lý do vì sao không áp dụng.
 
 ## 1. Requirements
 
 | NFR-ID | Category | Requirement | Target value | Priority | How it is verified | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| NFR-001 | Performance | Searching available rooms over a date range stays responsive on a realistic dataset | **Not fixed at requirements time.** A baseline is measured against the seeded dataset (~200 rooms, ~5,000 bookings) once the seeder exists, recorded here, and a target agreed from it | should | Measure and record a baseline; later changes must not regress it | No real traffic exists to derive a figure from, and an invented number would be a target nobody could defend. Left open per the NFR catalog's own guidance for thin reasoning |
-| NFR-002 | Performance | List endpoints issue no N+1 queries | Query count does not grow with the number of rows in a page | must | Query-count assertion in tests | |
-| NFR-003 | Security | Passwords are stored only as hashes and are never returned by any endpoint | bcrypt; no password field in any response body | must | Unit test + e2e | |
-| NFR-004 | Security | Every endpoint outside the public room catalogue requires a valid token; admin endpoints reject a non-admin token | 401 when the token is missing, 403 when the role is wrong | must | e2e per role | |
-| NFR-005 | Data integrity | The database itself rejects two live bookings that overlap on the same room and date range — application code alone is not sufficient | Enforced by a database constraint, not only by a service-layer check | must | Concurrent double-insert test | The single most important guarantee in the system; see system-overview §2 problem 1 |
-| NFR-006 | Maintainability | Every migration has a working reverse path | `up → down → up` completes cleanly | should | Run in CI | |
-| NFR-007 | Maintainability | Unit and e2e tests run automatically on every push and must pass before merge | The whole suite green | must | GitHub Actions | |
+| NFR-001 | Performance | Tìm phòng trống theo khoảng ngày vẫn phản hồi tốt trên tập dữ liệu thực tế | **Chưa chốt ở bước requirement.** Đo baseline trên tập dữ liệu seeder sinh ra (~200 phòng, ~5.000 booking) khi có seeder, ghi lại vào đây, rồi mới thống nhất ngưỡng | should | Đo và ghi baseline; thay đổi về sau không được tệ đi so với baseline | Không có traffic thật nào để rút ra con số, mà một con số bịa thì không ai bảo vệ được. Để mở theo đúng hướng dẫn của chính catalog NFR khi căn cứ mỏng |
+| NFR-002 | Performance | Các endpoint dạng danh sách không sinh truy vấn N+1 | Số query không tăng theo số bản ghi trong một trang | must | Assert số query trong test | |
+| NFR-003 | Security | Mật khẩu chỉ lưu dạng băm và không endpoint nào trả về | bcrypt; không có trường password trong bất kỳ response nào | must | Unit test + e2e | |
+| NFR-004 | Security | Mọi endpoint ngoài danh mục phòng công khai đều đòi token hợp lệ; endpoint admin từ chối token không phải admin | 401 khi thiếu token, 403 khi sai quyền | must | e2e cho từng role | |
+| NFR-005 | Data integrity | **Chính database** từ chối hai hold chồng nhau trên cùng một phòng và cùng khoảng ngày — chỉ kiểm tra ở tầng ứng dụng là không đủ | Ràng buộc ở tầng database, không phải chỉ một phép kiểm trong service | must | Test ghi đồng thời hai request | Bảo đảm quan trọng nhất của cả hệ thống; xem system-overview §2 vấn đề 1 |
+| NFR-006 | Maintainability | Mọi migration đều có đường lùi chạy được | `up → down → up` hoàn tất sạch | should | Chạy trong CI | |
+| NFR-007 | Maintainability | Unit test và e2e chạy tự động mỗi lần push, và phải xanh trước khi merge | Toàn bộ suite xanh | must | GitHub Actions | |
 
 ## 2. Out of Scope
 
 | Category | Reason |
 | --- | --- |
-| Availability | Never deployed to production; runs locally in Docker, so there is no uptime to commit to |
-| Extensibility | A training project with a closed scope and no growth roadmap |
-| Laws & Regulations | No real personal data and no real users |
-| Data Management | No production data to back up or to set a retention period for |
-| Compatibility | Excluded by the NFR catalog itself — it belongs to the test planning phase, not to requirements |
+| Availability | Không bao giờ deploy production; chạy local trong Docker nên không có uptime nào để cam kết |
+| Extensibility | Bài training có phạm vi đóng, không có lộ trình mở rộng |
+| Laws & Regulations | Không có dữ liệu cá nhân thật và không có người dùng thật |
+| Data Management | Không có dữ liệu production để backup hay đặt thời hạn lưu trữ |
+| Compatibility | Chính catalog NFR loại sẵn — nó thuộc pha lập kế hoạch test, không thuộc requirement |
 
 ## 3. Revision History
 
 | Date | Updated by | Content |
 | --- | --- | --- |
-| 2026-09-18 | pm-gather-requirements skill | Created; NFR-001..NFR-007 approved, five categories recorded as out of scope |
-| 2026-09-18 | pm-gather-requirements skill | NFR-001 target left open — a measured baseline replaces the invented p95 figure |
+| 2026-09-18 | pm-gather-requirements skill | Tạo mới; duyệt NFR-001..NFR-007, ghi 5 nhóm là out of scope |
+| 2026-09-18 | pm-gather-requirements skill | Để mở target của NFR-001 — thay con số p95 tự nghĩ bằng một baseline đo được |
+| 2026-09-19 | — | Dịch phần diễn giải sang tiếng Việt; heading, tên cột, NFR-ID và tên Category giữ tiếng Anh |
