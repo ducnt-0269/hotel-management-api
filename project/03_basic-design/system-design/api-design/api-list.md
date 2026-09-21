@@ -1,0 +1,136 @@
+# API List
+
+> Related: [Function list](../../../02_requirements/function-list.md) ·
+> [Role list](../../../02_requirements/role-list.md) · [Database design](../database-design.md)
+>
+> REST / JSON. Path, tên field, giá trị enum giữ tiếng Anh; diễn giải bằng tiếng Việt.
+> Bản OpenAPI chính thức sẽ sinh từ code (Zod + `@nestjs/swagger`); file này là thiết kế đi trước.
+
+> **Status: DRAFT — thiết kế dự kiến, chưa có code xác nhận.** Các quyết định ở đây là INFERRED từ
+> requirement. Khi implement thấy không hợp lý: nêu mâu thuẫn, quyết xong ghi vào `## Deviations` rồi sửa phần chính.
+
+## 1. Conventions
+
+| Item                                    | Value                                                                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Base path                               | `/api`, không version                                                                                                    |
+| Auth                                    | `Authorization: Bearer <jwt>` · thiếu → 401 · sai role → 403                                                             |
+| JSON keys                               | camelCase (DB là snake_case)                                                                                             |
+| Ngày / thời điểm                        | `YYYY-MM-DD` cho `*Date`; ISO 8601 UTC cho `*At`                                                                         |
+| Tiền                                    | số nguyên VND                                                                                                            |
+| ID                                      | số nguyên                                                                                                                |
+| Pagination                              | `?page=1&perPage=20` (tối đa 100) → `{ "data": [...], "meta": { "total", "page", "perPage" } }`                          |
+| Object đơn                              | Trả thẳng, không bọc                                                                                                     |
+| Không có gì để trả                      | Body rỗng (logout, đổi mật khẩu, delete)                                                                                 |
+| Tạo sub-resource (approval, rejection…) | `POST` → 201, body = bản ghi vừa tạo                                                                                     |
+| Lỗi                                     | Shape mặc định của NestJS: `{ "statusCode", "message", "error" }`; validation `message` là mảng `"<path>: <msg>"`        |
+| Mã lỗi                                  | 400 validation · 401 chưa đăng nhập · 403 sai quyền · 404 không có / không phải của mình · 409 trạng thái không cho phép |
+| Field vắng mặt                          | `null` trong JSON (DB không có null; API có)                                                                             |
+| Resource theo role                      | Không prefix `/admin`; cùng path, guard theo method; list trả theo scope (user: của mình, admin: tất cả)                 |
+| Transition                              | Danh từ sub-resource, khớp bảng outcome: `/approval`, `/rejection`, `/cancellation`, `/deactivation`, `/reactivation`    |
+
+## 2. Shapes
+
+```jsonc
+// User
+{ "id": 7, "email": "an@example.com", "fullName": "Nguyễn Văn An", "role": "user",
+  "status": "active", "createdAt": "2026-09-21T07:41:00Z" }
+
+// RoomType   (search có ngày: thêm "availableRooms")
+{ "id": 3, "name": "Deluxe Sea View", "description": "…", "pricePerNight": 1500000, "totalRooms": 3,
+  "amenities": ["wifi", "tv", "balcony", "bed_king", "view_sea"], "createdAt": "…", "updatedAt": "…" }
+
+// BookingRequest   (admin xem: thêm "user": { id, email, fullName })
+{ "id": 42, "roomType": { "id": 3, "name": "Deluxe Sea View" }, "roomsRequested": 2,
+  "checkInDate": "2026-10-10", "checkOutDate": "2026-10-12", "nights": 2, "totalAmount": 6000000,
+  "status": "pending", "expiresAt": "2026-09-22T07:41:00Z", "rejectionReason": null, "createdAt": "…" }
+
+// Review
+{ "id": 5, "bookingRequestId": 42, "roomTypeId": 3, "rating": 5, "comment": "…",
+  "status": "pending", "author": { "fullName": "Nguyễn Văn An" }, "createdAt": "…" }
+
+// Payment
+{ "id": 9, "bookingRequestId": 42, "amount": 6000000, "createdAt": "…" }
+
+// Outcome
+{ "bookingRequestId": 42, "adminUserId": 1, "createdAt": "…" }             // rejection thêm "reason"
+{ "bookingRequestId": 42, "createdAt": "…" }                                // cancellation
+{ "reviewId": 5, "adminUserId": 1, "createdAt": "…" }
+{ "userId": 7, "adminUserId": 1, "createdAt": "…" }
+
+// Auth
+{ "accessToken": "eyJ…", "user": User }
+
+// Statistics
+{ "groupBy": "month", "from": "2026-01-01", "to": "2026-06-30",
+  "data": [ { "key": "2026-01", "total": 38,
+              "byStatus": { "approved": 25, "rejected": 6, "cancelled": 4, "expired": 3, "pending": 0 } } ] }
+{ "groupBy": "month", "from": "…", "to": "…", "currency": "VND", "totalRevenue": 412500000,
+  "data": [ { "key": "2026-01", "revenue": 62000000, "payments": 21 } ] }
+// groupBy = roomType → "key": { "id": 3, "name": "…" }
+```
+
+## 3. API List
+
+| No  | F-ID                | Method | Path                                 | Role        | Request                                                              | Response               | Note                                                                                     |
+| --- | ------------------- | ------ | ------------------------------------ | ----------- | -------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
+| 1   | F-001               | POST   | `/auth/register`                     | Visitor     | body: email, password, fullName                                      | User (unverified)      | 409 email trùng; phát job mail kích hoạt                                                 |
+| 2   | F-016               | GET    | `/auth/activate`                     | Visitor     | query: token                                                         | User (active)          | GET vì là link trong mail; 404 / 409 hết hạn                                             |
+| 3   | F-002               | POST   | `/auth/login`                        | Visitor     | body: email, password                                                | Auth                   | 401 sai; 403 chưa kích hoạt / bị khoá                                                    |
+| 4   | F-002               | POST   | `/auth/logout`                       | User, Admin | —                                                                    | —                      | Stateless; client bỏ token                                                               |
+| 5   | F-003               | GET    | `/me`                                | User, Admin | —                                                                    | User                   |                                                                                          |
+| 6   | F-003               | PATCH  | `/me`                                | User, Admin | body: fullName                                                       | User                   |                                                                                          |
+| 7   | F-003               | PUT    | `/me/password`                       | User, Admin | body: currentPassword, newPassword                                   | —                      | 401 mật khẩu cũ sai                                                                      |
+| 8   | F-005, F-006, F-017 | GET    | `/room-types`                        | Public      | query: page, perPage, checkInDate, checkOutDate, amenities[], format | List\<RoomType\>       | Có ngày → chỉ loại còn chỗ mọi ngày, thêm `availableRooms`. `format=xlsx` (admin) → file |
+| 9   | F-005               | GET    | `/room-types/:id`                    | Public      | —                                                                    | RoomType               |                                                                                          |
+| 10  | F-013               | GET    | `/room-types/:id/reviews`            | Public      | query: page, perPage                                                 | List\<Review\>         | Chỉ `approved`                                                                           |
+| 11  | F-007               | POST   | `/room-types`                        | Admin       | body: name, description, pricePerNight, totalRooms, amenities[]      | RoomType               | 409 name trùng                                                                           |
+| 12  | F-007               | PATCH  | `/room-types/:id`                    | Admin       | body: các field trên, tuỳ chọn                                       | RoomType               | `amenities` gửi = thay toàn bộ                                                           |
+| 13  | F-007               | DELETE | `/room-types/:id`                    | Admin       | —                                                                    | —                      | 409 khi đã có request (FK)                                                               |
+| 14  | F-008               | POST   | `/booking-requests`                  | User        | body: roomTypeId, roomsRequested, checkInDate, checkOutDate          | BookingRequest         | 409 ngừng bán / hết chỗ (message liệt kê ngày thiếu)                                     |
+| 15  | F-009, F-011        | GET    | `/booking-requests`                  | User, Admin | query: page, perPage, status, roomTypeId, userId (admin)             | List\<BookingRequest\> | User: của mình; admin: tất cả + `user`; `createdAt` giảm dần                             |
+| 16  | F-009, F-011        | GET    | `/booking-requests/:id`              | User, Admin | —                                                                    | BookingRequest         | 404 nếu của user khác                                                                    |
+| 17  | F-010               | POST   | `/booking-requests/:id/cancellation` | User (chủ)  | —                                                                    | Outcome                | 409 không còn pending                                                                    |
+| 18  | F-011               | POST   | `/booking-requests/:id/approval`     | Admin       | —                                                                    | Outcome                | 409; sau commit → job mail                                                               |
+| 19  | F-011               | POST   | `/booking-requests/:id/rejection`    | Admin       | body: reason                                                         | Outcome                | 400 reason rỗng; 409; job mail kèm lý do                                                 |
+| 20  | F-012               | PUT    | `/booking-requests/:id/payment`      | User (chủ)  | —                                                                    | Payment                | Idempotent: lần đầu 201, sau 200 cùng body; 409 chưa approved                            |
+| 21  | F-013               | POST   | `/booking-requests/:id/review`       | User (chủ)  | body: rating, comment                                                | Review (pending)       | 409 chưa approved / chưa qua checkOutDate / đã có review                                 |
+| 22  | F-014               | GET    | `/reviews`                           | Admin       | query: status (mặc định pending), page, perPage                      | List\<Review\>         |                                                                                          |
+| 23  | F-014               | POST   | `/reviews/:id/approval`              | Admin       | —                                                                    | Outcome                | 409 không còn pending                                                                    |
+| 24  | F-014               | POST   | `/reviews/:id/rejection`             | Admin       | —                                                                    | Outcome                | 409                                                                                      |
+| 25  | F-004               | GET    | `/users`                             | Admin       | query: page, perPage, status, role, q                                | List\<User\>           | `q` tìm theo email / tên                                                                 |
+| 26  | F-004               | GET    | `/users/:id`                         | Admin       | —                                                                    | User                   |                                                                                          |
+| 27  | F-004               | POST   | `/users/:id/deactivation`            | Admin       | —                                                                    | Outcome                | 409 không active; 409 tự khoá mình                                                       |
+| 28  | F-004               | POST   | `/users/:id/reactivation`            | Admin       | —                                                                    | Outcome                | 409 không deactivated                                                                    |
+| 29  | F-018               | GET    | `/statistics/booking-requests`       | Admin       | query: groupBy (month, quarter, roomType), from, to                  | Statistics             | Theo `createdAt`                                                                         |
+| 30  | F-019               | GET    | `/statistics/revenue`                | Admin       | query: from, to, roomTypeId, groupBy (month, roomType)               | Statistics             | Theo `payments.createdAt`                                                                |
+
+## 4. Triggers (không phải endpoint)
+
+| F-ID      | Trigger                                      | Việc                                                                                                                  |
+| --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| F-015     | Sau commit approval / rejection / expiration | Job `booking-request.notify` (BullMQ) → mail cho user, rejection kèm lý do                                            |
+| F-016     | Sau register                                 | Job `user.activation` → mail kèm link `/auth/activate?token=`                                                         |
+| F-008 E-4 | Cron mỗi phút                                | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail |
+| F-020     | Cron 23:59 ngày cuối tháng                   | Tổng hợp doanh thu tháng (cùng service với No 30) → mail cho mọi admin                                                |
+
+## 5. Open Items
+
+| #   | Item                                                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------- |
+| 1   | `POST /auth/register` trả User hay 201 rỗng? Hiện chọn trả User (dễ test)                                 |
+| 2   | Có cần `GET /booking-requests/:id/timeline` gộp 4 outcome? Hiện `status` + `rejectionReason` đủ cho F-009 |
+| 3   | Rate limit `/auth/*` (`@nestjs/throttler`) — không phải must, thêm nếu còn thời gian                      |
+
+## 6. Deviations
+
+> Mỗi lần code làm khác thiết kế: một dòng. Rỗng = tài liệu còn đúng với code.
+
+| Date | What changed | Why |
+| --- | --- | --- |
+
+## 7. Revision History
+
+| Date       | Updated by | Content                                                                           |
+| ---------- | ---------- | --------------------------------------------------------------------------------- |
+| 2026-09-21 | —          | Bản đầu tiên: 30 endpoint + 4 trigger, full scope. Lỗi dùng shape mặc định NestJS |
