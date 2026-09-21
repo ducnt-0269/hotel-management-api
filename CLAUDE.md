@@ -20,15 +20,20 @@ npm run lint                  # oxlint --type-aware src/ test/
 npm run format                # oxfmt (config: .oxfmtrc.json — sorts imports, ignores *.md and project/)
 npm run format:check
 npm test                      # vitest, unit: **/*.spec.ts
-npm run test:e2e              # vitest, e2e: **/*.e2e-spec.ts — needs the docker stack up
+npm run test:e2e              # vitest, e2e: **/*.e2e-spec.ts — needs the docker stack up; runs against `hotel_test`
+                              # (.env.test), applies migrations first, refuses any DB not named *_test
 npm run test:cov
 
 npx vitest run src/app.controller.spec.ts                         # one unit file
 npx vitest run -t "should return"                                 # by test name
-npx vitest run --config vitest.config.e2e.ts test/app.e2e-spec.ts # one e2e file
+npx vitest run --config vitest.config.e2e.ts test/health.e2e-spec.ts # one e2e file
+npm run migration:generate -- src/database/migrations/CreateUsers      # then migration:run | revert | show
 ```
 
 Node 24 (`.nvmrc`). CI (`Quality gate`) runs lint → format:check → build → unit → e2e on every push and PR.
+
+Testing: e2e over HTTP against real Postgres is primary (one file per module, `resetDb(app)` in `beforeEach`,
+fixtures via fishery + faker in `test/support/factories/`); unit specs only for pure functions. No mocked repositories.
 
 ## Stack decisions already made
 
