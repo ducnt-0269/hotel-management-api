@@ -12,11 +12,11 @@
 
 | NFR-ID | Category | Requirement | Target value | Priority | How it is verified | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| NFR-001 | Performance | Tìm phòng trống theo khoảng ngày vẫn phản hồi tốt trên tập dữ liệu thực tế | **Chưa chốt ở bước requirement.** Đo baseline trên tập dữ liệu seeder sinh ra (~200 phòng, ~5.000 booking) khi có seeder, ghi lại vào đây, rồi mới thống nhất ngưỡng | should | Đo và ghi baseline; thay đổi về sau không được tệ đi so với baseline | Không có traffic thật nào để rút ra con số, mà một con số bịa thì không ai bảo vệ được. Để mở theo đúng hướng dẫn của chính catalog NFR khi căn cứ mỏng |
+| NFR-001 | Performance | Tìm loại phòng còn chỗ theo khoảng ngày vẫn phản hồi tốt trên tập dữ liệu thực tế | **Chưa chốt ở bước requirement.** Đo baseline trên tập dữ liệu seeder sinh ra (~20 loại phòng, ~5.000 booking) khi có seeder, ghi lại vào đây, rồi mới thống nhất ngưỡng | should | Đo và ghi baseline; thay đổi về sau không được tệ đi so với baseline | Không có traffic thật nào để rút ra con số, mà một con số bịa thì không ai bảo vệ được. Để mở theo đúng hướng dẫn của chính catalog NFR khi căn cứ mỏng. Chi phí truy vấn tỉ lệ với **số booking × số đêm** của khoảng tìm, không phải số loại phòng — seeder phải bơm vào chỗ đó thì baseline mới có nghĩa |
 | NFR-002 | Performance | Các endpoint dạng danh sách không sinh truy vấn N+1 | Số query không tăng theo số bản ghi trong một trang | must | Assert số query trong test | |
 | NFR-003 | Security | Mật khẩu chỉ lưu dạng băm và không endpoint nào trả về | bcrypt; không có trường password trong bất kỳ response nào | must | Unit test + e2e | |
-| NFR-004 | Security | Mọi endpoint ngoài danh mục phòng công khai đều đòi token hợp lệ; endpoint admin từ chối token không phải admin | 401 khi thiếu token, 403 khi sai quyền | must | e2e cho từng role | |
-| NFR-005 | Data integrity | **Chính database** từ chối hai hold chồng nhau trên cùng một phòng và cùng khoảng ngày — chỉ kiểm tra ở tầng ứng dụng là không đủ | Ràng buộc ở tầng database, không phải chỉ một phép kiểm trong service | must | Test ghi đồng thời hai request | Bảo đảm quan trọng nhất của cả hệ thống; xem system-overview §2 vấn đề 1 |
+| NFR-004 | Security | Mọi endpoint ngoài danh mục loại phòng công khai đều đòi token hợp lệ; endpoint admin từ chối token không phải admin | 401 khi thiếu token, 403 khi sai quyền | must | e2e cho từng role | |
+| NFR-005 | Data integrity | **Chính database** từ chối khi số chỗ đã giữ của một loại phòng vượt quá số phòng của loại đó, trong bất kỳ ngày nào của khoảng yêu cầu — chỉ kiểm tra ở tầng ứng dụng là không đủ | Ràng buộc ở tầng database, không phải chỉ một phép kiểm trong service. Phép kiểm xét **từng ngày** trong khoảng, không phải cả kỳ một lần | must | Test ghi đồng thời hai request | Bảo đảm quan trọng nhất của cả hệ thống; xem system-overview §2 vấn đề 1. Chỗ dễ sai: độ kín đổi theo từng ngày, nên đếm gộp cả kỳ sẽ cho kết quả đúng lúc test mà sai khi có dữ liệu thật |
 | NFR-006 | Maintainability | Mọi migration đều có đường lùi chạy được | `up → down → up` hoàn tất sạch | should | Chạy trong CI | |
 | NFR-007 | Maintainability | Unit test và e2e chạy tự động mỗi lần push, và phải xanh trước khi merge | Toàn bộ suite xanh | must | GitHub Actions | |
 
@@ -37,3 +37,5 @@
 | 2026-09-18 | pm-gather-requirements skill | Tạo mới; duyệt NFR-001..NFR-007, ghi 5 nhóm là out of scope |
 | 2026-09-18 | pm-gather-requirements skill | Để mở target của NFR-001 — thay con số p95 tự nghĩ bằng một baseline đo được |
 | 2026-09-19 | — | Dịch phần diễn giải sang tiếng Việt; heading, tên cột, NFR-ID và tên Category giữ tiếng Anh |
+| 2026-09-19 | — | Viết lại NFR-001 theo mô hình loại phòng: tập baseline đổi từ ~200 phòng sang ~20 loại phòng, và ghi rõ chi phí truy vấn tỉ lệ với số booking × số đêm |
+| 2026-09-19 | — | Viết lại NFR-005 theo mô hình loại phòng: điều kiện từ chối không còn là hai hold chồng nhau trên cùng một phòng, mà là số chỗ đã giữ vượt quá số phòng của loại đó trong một ngày bất kỳ |
