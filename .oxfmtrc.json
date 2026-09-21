@@ -1,0 +1,15 @@
+{
+  "ignorePatterns": ["**/*.md", "project/**", "plans/**", "docs/**"],
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 80,
+  "sortImports": {
+    "groups": [
+      "value-builtin",
+      "value-external",
+      ["value-parent", "value-sibling", "value-index"],
+      "type-import"
+    ],
+    "newlinesBetween": true
+  }
+}

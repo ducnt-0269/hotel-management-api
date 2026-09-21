@@ -1,4 +1,4 @@
-name: CI
+name: Quality gate
 
 on:
   push:
@@ -7,11 +7,12 @@ on:
 
 # A newer push to the same branch cancels the run still in flight.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: quality-gate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  ci:
+  quality-gate:
+    name: Lint · Format · Build · Test
     runs-on: ubuntu-latest
 
     # Postgres and Redis back the TypeORM and BullMQ work that lands next;
@@ -64,6 +65,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
 
       - name: Build
         run: npm run build
