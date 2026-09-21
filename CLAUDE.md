@@ -41,7 +41,7 @@ Node 24 (`.nvmrc`). CI (`Quality gate`) runs lint → format:check → build →
   `down` (NFR-006). Enums are `varchar` + `CHECK`, never Postgres native enums.
 - **BullMQ** (Redis) for mail jobs, `@nestjs-modules/mailer` (Mailpit locally, Gmail SMTP for demo),
   `@nestjs/schedule` for the hold-expiry cron and month-end report, JWT via `passport-jwt`,
-  `nestjs-i18n`, `@nestjs/swagger` (OpenAPI is generated from code, not hand-written).
+  `nestjs-i18n`, `@nestjs/swagger` generates OpenAPI from code (not hand-written); the UI is Scalar (`@scalar/nestjs-api-reference`) at `/api/docs`, no `docs-json` route.
 - Errors use NestJS's default `{ statusCode, message, error }` shape — no custom filter.
 
 ## Documents: which ones are truth

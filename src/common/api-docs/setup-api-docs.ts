@@ -1,15 +1,16 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 
 import type { INestApplication } from '@nestjs/common';
 
-// OpenAPI is generated from code (Zod schemas + decorators), never hand-written.
-// UI at /api/docs, raw document at /api/docs-json.
-export function setupSwagger(app: INestApplication) {
+// OpenAPI is generated from code (Zod schemas + decorators), never
+// hand-written. `@nestjs/swagger` builds the document; Scalar renders it.
+export function setupApiDocs(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('Hotel Management API')
     .setVersion('0.0.1')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true });
+  app.use('/api/docs', apiReference({ content: document }));
 }

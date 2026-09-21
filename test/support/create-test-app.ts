@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 
 import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
-import { setupSwagger } from '../../src/common/swagger/setup-swagger.js';
+import { setupApiDocs } from '../../src/common/api-docs/setup-api-docs.js';
 
 import type { INestApplication } from '@nestjs/common';
 
@@ -14,7 +14,7 @@ export async function createTestApp(): Promise<INestApplication> {
   }).compile();
   const app = moduleRef.createNestApplication();
   configureApp(app);
-  setupSwagger(app);
+  setupApiDocs(app);
   await app.init();
   return app;
 }

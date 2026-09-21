@@ -38,6 +38,7 @@
     "@nestjs/schedule": "^12.0.2",
     "@nestjs/swagger": "^12.0.1",
     "@nestjs/typeorm": "^12.0.1",
+    "@scalar/nestjs-api-reference": "^1.2.19",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.3.7",
     "nest-commander": "^3.21.0",
