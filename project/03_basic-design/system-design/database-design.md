@@ -232,8 +232,8 @@ rồi mới INSERT. Cơ chế chặn ở tầng DB cho NFR-005 (trigger hay bả
 
 | #   | Item                                                                                                                                                                                  | Owner |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| 1   | Cơ chế chặn capacity ở tầng DB (NFR-005): trigger + advisory lock trên `booking_requests`, hay bảng `room_type_daily_inventory` (+1 bảng). Schema hiện tại không đổi dù chọn cách nào | Dev   |
-| 2   | TypeORM `^1.1.1` với `"type": "module"`: xác nhận `@Index({ where })`, `@Check`, CLI migration ESM. Đường an toàn: partial index / CHECK viết tay trong migration SQL                 | Dev   |
+| 1   | Cơ chế chặn capacity ở tầng DB (NFR-005). **2026-09-21: tạm hoãn** — đi advisory lock (`pg_advisory_xact_lock(room_type_id)`) + kiểm tra trong transaction ở service; thêm ràng buộc thật ở DB (bảng `room_type_daily_inventory`) chỉ khi còn thời gian. Schema hiện tại không đổi | Dev   |
+| 2   | ~~TypeORM `^1.1.1` với `"type": "module"`~~ **Đã xác nhận 2026-09-21** bằng spike: `@Check`, `@Index({ where })` sinh SQL đúng; `migration:generate` / `run` / `revert` chạy qua `dist/database/data-source.js` (ESM, không cần ts-node). Script: `npm run migration:*` | Dev   |
 | 3   | Giảm `total_rooms` xuống dưới số đang giữ (F-007 / F-011) — câu hỏi treo từ `ba-memory.md`                                                                                            | BA    |
 
 ## 8. Deviations
