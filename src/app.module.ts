@@ -2,10 +2,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
-import { envSchema } from './config/env.schema.js';
+import { AppConfigModule } from './config/app-config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 
@@ -13,7 +12,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validationSchema: envSchema }),
+    AppConfigModule,
     DatabaseModule,
     I18nModule.forRoot({
       fallbackLanguage: 'en',
