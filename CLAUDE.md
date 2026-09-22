@@ -131,10 +131,16 @@ Never write code that updates `status` without inserting the matching outcome ro
 
 - `@RespondsWith(schema, { status, description })` does both jobs — response filtering and the
   documented body (via `z.toJSONSchema`). Do not also add `@SerializeOptions`.
+- Every collection uses the `{ data, meta }` envelope, `paginatedSchema(item)` — never a bare array.
+  Nest's serializer validates an array response element by element, so a top-level `z.array(...)`
+  is checked against each element and throws; the envelope sidesteps that entirely.
 - `@ApiErrorResponse(status, message)` per failure the route can produce; the message doubles as the
   description.
-- 400 (route takes a body) and 401 (route is guarded) are injected centrally in
+- 400 (route takes a body, or a validated path/query parameter) and 401 (route is guarded) are injected centrally in
   `src/common/api-docs/standard-error-responses.ts` — never declare those per route.
+- Nest documents `@Query({ schema })` and `@Param('id', { schema })` from the schema itself, with the
+  real constraints (`default`, `minimum`, `maximum`). **Do not add `@ApiQuery`** — it appends a second
+  copy of the same parameter. Per-param prose goes on the Zod field via `.describe()`.
 - Declaring any `@ApiResponse` removes Nest's implicit success entry, so state the success status too.
 - `z.date()` has no JSON Schema form: date fields carry `.meta({ type: 'string', format: 'date-time' })`.
 - To inspect the generated document: boot `AppModule` in a scratch script under `dist/`, call
