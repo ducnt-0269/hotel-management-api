@@ -1,8 +1,14 @@
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { MailerModule, MailerQueueModule } from '@nestjs-modules/mailer';
+import { MjmlAdapter } from '@nestjs-modules/mailer/adapters/mjml.adapter';
 import { Module } from '@nestjs/common';
 
 import { EnvService } from '../config/env.service.js';
 import { MailService } from './mail.service.js';
+
+const here = fileURLToPath(new URL('.', import.meta.url));
 
 // MailerQueueModule brings its own BullMQ queue and worker, so there is no
 // hand-written processor: enqueue() puts the rendered mail on Redis and the
@@ -20,6 +26,19 @@ import { MailService } from './mail.service.js';
           ignoreTLS: true,
         },
         defaults: { from: envService.get('MAIL_FROM') },
+        // Handlebars fills the MJML source, then MJML compiles it to the
+        // table markup Outlook understands. CSS inlining is MJML's job, so
+        // the Handlebars adapter's own inliner stays off.
+        template: {
+          dir: join(here, 'templates'),
+          adapter: new MjmlAdapter('handlebars', { inlineCssEnabled: false }),
+          // Handlebars compile options; `strict` turns a missing context
+          // value into an error instead of a blank space in someone's inbox.
+          options: { strict: true },
+        },
+        // Runtime options, read from the top level rather than from
+        // `template`: every mail is wrapped in templates/layout.hbs.
+        options: { layout: 'layout' },
       }),
     }),
     MailerQueueModule.registerAsync({

@@ -1,19 +1,34 @@
-import escapeHtml from 'escape-html';
+import { ACTIVATION_TOKEN_TTL_HOURS } from '../../auth/activation-token.js';
 
 import type { User } from '../../users/entities/user.entity.js';
+import type { ISendMailOptions } from '@nestjs-modules/mailer';
 
-// One inline template while there is exactly one mail. When the booking
-// mails arrive, move these to a template adapter — Handlebars escapes on its
-// own, which is the job escapeHtml() is doing by hand here.
-export function activationEmail(user: User, activationUrl: string) {
-  const name = escapeHtml(user.fullName);
+// Subject and plain text live here; the HTML is rendered from
+// `templates/activation.mjml` at send time. The plain-text part is what
+// notification previews and spam filters read, so it is written by hand.
+export function activationEmail(
+  user: User,
+  activationUrl: string,
+): ISendMailOptions {
+  const subject = 'Kích hoạt tài khoản Hotel Management';
 
   return {
-    subject: 'Kích hoạt tài khoản Hotel Management',
-    text: `Xin chào ${user.fullName},\n\nMở liên kết sau để kích hoạt tài khoản:\n${activationUrl}\n\nLiên kết hết hạn sau 24 giờ.`,
-    html: `<p>Xin chào ${name},</p>
-<p>Mở liên kết sau để kích hoạt tài khoản:</p>
-<p><a href="${activationUrl}">${activationUrl}</a></p>
-<p>Liên kết hết hạn sau 24 giờ.</p>`,
+    subject,
+    template: 'activation.mjml',
+    context: {
+      subject,
+      preview: `Liên kết kích hoạt hết hạn sau ${ACTIVATION_TOKEN_TTL_HOURS} giờ.`,
+      fullName: user.fullName,
+      url: activationUrl,
+      expiryHours: ACTIVATION_TOKEN_TTL_HOURS,
+    },
+    text: [
+      `Xin chào ${user.fullName},`,
+      '',
+      'Tài khoản của bạn đã được tạo. Mở liên kết sau để kích hoạt:',
+      activationUrl,
+      '',
+      `Liên kết hết hạn sau ${ACTIVATION_TOKEN_TTL_HOURS} giờ.`,
+    ].join('\n'),
   };
 }

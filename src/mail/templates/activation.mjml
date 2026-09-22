@@ -1,0 +1,47 @@
+<mj-text
+  font-size="22px"
+  font-weight="700"
+  color="#18181b"
+  padding-bottom="16px"
+>
+  Kích hoạt tài khoản
+</mj-text>
+
+<mj-text padding-bottom="8px">Xin chào {{ fullName }},</mj-text>
+
+<mj-text padding-bottom="28px">
+  Tài khoản của bạn đã được tạo. Bấm nút bên dưới để kích hoạt và bắt đầu đặt
+  phòng.
+</mj-text>
+
+<mj-button
+  href="{{url}}"
+  background-color="#0f766e"
+  color="#ffffff"
+  font-size="16px"
+  font-weight="600"
+  inner-padding="14px 28px"
+  border-radius="8px"
+  align="left"
+  padding="0 0 28px"
+>
+  Kích hoạt tài khoản
+</mj-button>
+
+<mj-text font-size="13px" color="#71717a" padding-bottom="4px">
+  Nút không bấm được? Dán liên kết này vào trình duyệt:
+</mj-text>
+<mj-text
+  font-size="13px"
+  color="#0f766e"
+  css-class="link-fallback"
+  padding-bottom="28px"
+>
+  {{ url }}
+</mj-text>
+
+<mj-divider border-width="1px" border-color="#e4e4e7" padding="0 0 24px" />
+
+<mj-text font-size="13px" color="#71717a">
+  Liên kết hết hạn sau {{ expiryHours }} giờ.
+</mj-text>
