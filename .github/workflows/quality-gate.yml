@@ -40,6 +40,16 @@ jobs:
           --health-timeout 3s
           --health-retries 10
 
+      # Catches the activation mail the auth e2e asserts on.
+      mailpit:
+        image: axllent/mailpit:latest
+        ports: ['1025:1025', '8025:8025']
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     env:
       NODE_ENV: test
       DB_HOST: localhost
@@ -49,6 +59,8 @@ jobs:
       DB_NAME: hotel_test
       REDIS_HOST: localhost
       REDIS_PORT: 6379
+      MAIL_HOST: localhost
+      MAIL_PORT: 1025
       JWT_SECRET: ci-only-secret
       JWT_EXPIRES_IN: 1d
 
