@@ -1,0 +1,58 @@
+{{!--
+  Shared MJML shell for every mail: preheader, brand bar, white card, footer.
+  `{{{body}}}` is the rendered template, injected by the mailer's `layout`
+  option. MJML compiles the result to the table markup Outlook needs, and
+  Handlebars escapes every {{value}} on the way in.
+--}}
+<mjml>
+  <mj-head>
+    <mj-title>{{subject}}</mj-title>
+    <mj-preview>{{preview}}</mj-preview>
+    <mj-attributes>
+      <mj-all font-family='Helvetica Neue, Helvetica, Arial, sans-serif' />
+      <mj-text font-size='15px' line-height='24px' color='#27272a' />
+    </mj-attributes>
+    <mj-style>
+      .link-fallback div { word-break: break-all; }
+    </mj-style>
+  </mj-head>
+
+  <mj-body background-color='#f4f4f5' width='600px'>
+    <mj-section padding='32px 24px 16px'>
+      <mj-column>
+        <mj-text
+          font-size='17px'
+          font-weight='700'
+          color='#0f766e'
+          letter-spacing='1px'
+        >
+          HOTEL MANAGEMENT
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section
+      background-color='#ffffff'
+      border-radius='12px'
+      padding='40px 32px'
+    >
+      <mj-column>
+        {{{body}}}
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding='20px 24px 32px'>
+      <mj-column>
+        <mj-text
+          font-size='12px'
+          line-height='20px'
+          color='#a1a1aa'
+          align='center'
+        >
+          Bạn nhận được email này vì địa chỉ của bạn được dùng để đăng ký tài
+          khoản Hotel Management. Nếu không phải bạn, hãy bỏ qua email này.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

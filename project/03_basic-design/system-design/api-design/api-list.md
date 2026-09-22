@@ -118,7 +118,7 @@
 
 | #   | Item                                                                                                      |
 | --- | --------------------------------------------------------------------------------------------------------- |
-| 1   | `POST /auth/register` trả User hay 201 rỗng? Hiện chọn trả User (dễ test)                                 |
+| 1   | ~~`POST /auth/register` trả User hay 201 rỗng?~~ **Đã chốt 2026-09-22**: trả User (`status: unverified`) |
 | 2   | Có cần `GET /booking-requests/:id/timeline` gộp 4 outcome? Hiện `status` + `rejectionReason` đủ cho F-009 |
 | 3   | Rate limit `/auth/*` (`@nestjs/throttler`) — không phải must, thêm nếu còn thời gian                      |
 
@@ -134,3 +134,5 @@
 | Date       | Updated by | Content                                                                           |
 | ---------- | ---------- | --------------------------------------------------------------------------------- |
 | 2026-09-21 | —          | Bản đầu tiên: 30 endpoint + 4 trigger, full scope. Lỗi dùng shape mặc định NestJS |
+| 2026-09-22 | —          | Ràng buộc input chốt thêm: `password` tối thiểu 8 và tối đa **72 byte** (giới hạn thật của bcrypt, không phải 72 ký tự — tiếng Việt có dấu 3 byte/ký tự); `fullName` chỉ nhận chữ mọi hệ chữ + dấu tổ hợp + khoảng trắng + `' ’ . -` |
+| 2026-09-22 | —          | Slice auth: dòng 1–7 đã implement. Token kích hoạt chốt là 32 byte ngẫu nhiên, lưu sha256 hex ở `token_hash`, TTL 24h, link `{APP_BASE_URL}/api/auth/activate?token=` (không có frontend nên trỏ thẳng vào API). `POST /auth/logout` và `PUT /me/password` trả 204 |

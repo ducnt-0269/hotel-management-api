@@ -3,8 +3,11 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { z } from 'zod';
 
+import { Public } from '../auth/decorators/public.decorator.js';
+
 const healthResponseSchema = z.object({ status: z.literal('ok') });
 
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}

@@ -4,6 +4,6 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["i18n/**/*.json"]
+    "assets": ["i18n/**/*.json", "mail/templates/**/*.{mjml,hbs}"]
   }
 }

@@ -24,29 +24,54 @@ npm run test:e2e              # vitest, e2e: **/*.e2e-spec.ts — needs the dock
                               # (.env.test), applies migrations first, refuses any DB not named *_test
 npm run test:cov
 
-npx vitest run src/app.controller.spec.ts                         # one unit file
+npx vitest run src/auth/activation-token.spec.ts                  # one unit file
 npx vitest run -t "should return"                                 # by test name
 npx vitest run --config vitest.config.e2e.ts test/health.e2e-spec.ts # one e2e file
 npm run migration:generate -- src/database/migrations/CreateUsers      # then migration:run | revert | show
+
+curl -s localhost:8025/api/v1/messages                            # what Mailpit received
+curl -s "localhost:8025/api/v1/search?query=to%3Aa@example.com"   # find one; /api/v1/message/{id} for the body
+curl -s localhost:8025/api/v1/message/{id}/html-check             # client-compatibility score
 ```
 
 Node 24 (`.nvmrc`). CI (`Quality gate`) runs lint → format:check → build → unit → e2e on every push and PR.
 
 Testing: e2e over HTTP against real Postgres is primary (one file per module, `resetDb(app)` in `beforeEach`,
 fixtures via fishery + faker in `test/support/factories/`); unit specs only for pure functions. No mocked repositories.
+e2e shares Redis db 0, the `mail` queue and Mailpit with `npm run start:dev`, so a run clears your dev inbox
+(`clearMailbox()` in `beforeEach`). Give e2e its own queue name / Redis db when that starts to hurt.
+
+## Module layout
+
+`src/<module>/`: module, controllers, services, strategies flat; `entities/`, `schemas/`, `guards/`,
+`decorators/` get folders whenever the module has any. Specs sit beside their source.
+An entity belongs to the module whose service INSERTs the row — hence `user_email_verifications`
+lives in `src/auth/`, not `src/users/`. Injected properties are named after their class:
+`authService`, `usersRepository`, `envService`.
 
 ## Stack decisions already made
 
 - **ESM** (`"type": "module"`, `nodenext`): relative imports need the `.js` extension (`./app.module.js`).
 - **Validation = Zod through NestJS 12's native Standard Schema support** — `@Body({ schema })`,
-  `@Query({ schema })`, global `StandardSchemaValidationPipe`, response filtering with
-  `@SerializeOptions({ schema })` + `StandardSchemaSerializerInterceptor`. `class-validator` /
-  `class-transformer` were removed on purpose; do not reintroduce them.
+  `@Query({ schema })`, global `StandardSchemaValidationPipe`, response filtering by
+  `StandardSchemaSerializerInterceptor` (declared per route with `@RespondsWith`, see below).
+  `class-validator` / `class-transformer` were removed on purpose; do not reintroduce them.
+- **Auth is on by default**: `JwtAuthGuard` is registered as `APP_GUARD`, so every route needs a bearer
+  token unless it carries `@Public()` (register, activate, login, health). `RolesGuard` lands with the
+  first admin route.
 - **TypeORM + Postgres**, migrations only (`synchronize: false`); every migration needs a working
   `down` (NFR-006). Enums are `varchar` + `CHECK`, never Postgres native enums.
+  `migration:generate` diffs entities against the DB named in `.env` and **drops any index entity
+  metadata does not know about** — so no hand-written indexes.
 - **BullMQ** (Redis) for mail jobs, `@nestjs-modules/mailer` (Mailpit locally, Gmail SMTP for demo),
   `@nestjs/schedule` for the hold-expiry cron and month-end report, JWT via `passport-jwt`,
   `nestjs-i18n`, `@nestjs/swagger` generates OpenAPI from code (not hand-written); the UI is Scalar (`@scalar/nestjs-api-reference`) at `/api/docs`, no `docs-json` route.
+- **Mail** is MJML compiled from Handlebars (`MjmlAdapter`): one `src/mail/templates/layout.hbs` plus a
+  `.mjml` per message, with the queue and worker from `MailerQueueModule` — which needs `ioredis`
+  installed (optional peer; without it the worker retry-loops until Node runs out of heap). Two traps:
+  `layout` / `partials` are read from the mailer's **top-level** `options`, not `template.options`; and
+  `mj-text` defaults to `padding: 10px 25px`, so buttons and dividers must repeat that 25px or they
+  hang off the left edge of the copy.
 - Errors use NestJS's default `{ statusCode, message, error }` shape — no custom filter.
 
 ## Documents: which ones are truth
@@ -101,3 +126,16 @@ Never write code that updates `status` without inserting the matching outcome ro
 - State transitions are noun sub-resources mirroring the outcome tables:
   `POST /booking-requests/:id/approval | rejection | cancellation`, `POST /users/:id/deactivation | reactivation`.
 - Lists: `?page&perPage` → `{ data, meta: { total, page, perPage } }`. Single objects are returned unwrapped.
+
+## Documenting an endpoint
+
+- `@RespondsWith(schema, { status, description })` does both jobs — response filtering and the
+  documented body (via `z.toJSONSchema`). Do not also add `@SerializeOptions`.
+- `@ApiErrorResponse(status, message)` per failure the route can produce; the message doubles as the
+  description.
+- 400 (route takes a body) and 401 (route is guarded) are injected centrally in
+  `src/common/api-docs/standard-error-responses.ts` — never declare those per route.
+- Declaring any `@ApiResponse` removes Nest's implicit success entry, so state the success status too.
+- `z.date()` has no JSON Schema form: date fields carry `.meta({ type: 'string', format: 'date-time' })`.
+- To inspect the generated document: boot `AppModule` in a scratch script under `dist/`, call
+  `SwaggerModule.createDocument` + `addStandardErrorResponses`, print `doc.paths`.

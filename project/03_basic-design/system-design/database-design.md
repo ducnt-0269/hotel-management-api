@@ -242,9 +242,12 @@ rồi mới INSERT. Cơ chế chặn ở tầng DB cho NFR-005 (trigger hay bả
 
 | Date | What changed | Why |
 | --- | --- | --- |
+| 2026-09-22 | Transition kích hoạt chạy `UPDATE users ... WHERE status='unverified'` **trước**, rồi mới `INSERT user_email_verifications` — ngược thứ tự mô tả ở §5 | Hai request kích hoạt cùng token chạy song song: nếu INSERT trước, request thứ hai đâm vào UNIQUE `user_id` và nhận `23505` → 500. Cho UPDATE chạy trước thì nó chờ row lock của `users`, tỉnh dậy thấy `status` không còn `unverified` → `affected = 0` → 409 đúng như thiết kế. Vẫn một transaction, `status` không bao giờ đổi mà thiếu dòng outcome. Có e2e chứng minh (`settles concurrent activations of the same token`) |
+| 2026-09-22 | `users.email` lưu lower-case, UNIQUE đặt thẳng trên cột, thay cho unique index trên `lower(email)` | TypeORM `@Index` không diễn đạt được function index. Index viết tay trong migration còn tệ hơn: `RdbmsSchemaBuilder.dropOldIndices()` xoá mọi index của bảng mà entity metadata không biết, nên mỗi lần `migration:generate` sau này sẽ sinh một câu DROP cho nó. Chuẩn hoá lower-case lúc ghi và lúc tra cho ràng buộc tương đương, và TypeORM mô tả được trọn vẹn |
 
 ## 9. Revision History
 
 | Date       | Updated by | Content                                                                                                                                                                |
 | ---------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-21 | —          | Bản đầu tiên: 17 bảng, full scope must + should + could. Tổng hợp từ phiên table-design và research `plans/reports/researcher-260921-0938-immutable-booking-schema.md` |
+| 2026-09-22 | —          | Slice auth: `users`, `user_email_verification_tokens`, `user_email_verifications` đã có migration (`CreateUsers1790045477478`). Các bảng còn lại vẫn chỉ nằm trên giấy |
