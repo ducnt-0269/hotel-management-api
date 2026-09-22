@@ -7,6 +7,9 @@ export const envSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
+  // Base of the links the app puts in emails; no frontend exists, so they
+  // point back at the API itself.
+  APP_BASE_URL: z.string().default('http://localhost:3000'),
 
   DB_HOST: z.string().default('localhost'),
   DB_PORT: z.coerce.number().int().positive().default(5432),

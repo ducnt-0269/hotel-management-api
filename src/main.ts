@@ -7,10 +7,10 @@ import { EnvService } from './config/env.service.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const env = app.get(EnvService);
+  const envService = app.get(EnvService);
   configureApp(app);
   // Docs expose every route and let visitors fire real requests; dev/staging only.
-  if (!env.isProduction) setupApiDocs(app);
-  await app.listen(env.get('PORT'));
+  if (!envService.isProduction) setupApiDocs(app);
+  await app.listen(envService.get('PORT'));
 }
 await bootstrap();

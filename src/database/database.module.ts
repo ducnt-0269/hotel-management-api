@@ -8,13 +8,13 @@ import { buildTypeOrmOptions } from './typeorm-options.js';
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [EnvService],
-      useFactory: (env: EnvService) => ({
+      useFactory: (envService: EnvService) => ({
         ...buildTypeOrmOptions({
-          DB_HOST: env.get('DB_HOST'),
-          DB_PORT: env.get('DB_PORT'),
-          DB_USERNAME: env.get('DB_USERNAME'),
-          DB_PASSWORD: env.get('DB_PASSWORD'),
-          DB_NAME: env.get('DB_NAME'),
+          DB_HOST: envService.get('DB_HOST'),
+          DB_PORT: envService.get('DB_PORT'),
+          DB_USERNAME: envService.get('DB_USERNAME'),
+          DB_PASSWORD: envService.get('DB_PASSWORD'),
+          DB_NAME: envService.get('DB_NAME'),
         }),
         autoLoadEntities: true,
       }),
