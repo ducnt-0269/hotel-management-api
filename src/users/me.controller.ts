@@ -1,20 +1,9 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Patch,
-  Put,
-  SerializeOptions,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiNoContentResponse,
-  ApiOkResponse,
-} from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
+import { ApiBearerAuth, ApiNoContentResponse } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import {
   changePasswordBodySchema,
   updateProfileBodySchema,
@@ -34,14 +23,19 @@ export class MeController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @SerializeOptions({ schema: userResponseSchema })
+  @RespondsWith(userResponseSchema, {
+    status: 200,
+    description: 'The signed-in user',
+  })
   profile(@CurrentUser() user: User): User {
     return user;
   }
 
   @Patch()
-  @ApiOkResponse({ description: 'Profile updated' })
-  @SerializeOptions({ schema: userResponseSchema })
+  @RespondsWith(userResponseSchema, {
+    status: 200,
+    description: 'Profile updated',
+  })
   updateProfile(
     @CurrentUser() user: User,
     @Body({ schema: updateProfileBodySchema }) body: UpdateProfileBody,

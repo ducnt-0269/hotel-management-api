@@ -30,7 +30,11 @@ export const userResponseSchema = z.object({
   fullName: z.string(),
   role: z.enum(['user', 'admin']),
   status: z.enum(['unverified', 'active', 'deactivated']),
-  createdAt: z.date(),
+  createdAt: z.date().meta({
+    type: 'string',
+    format: 'date-time',
+    examples: ['2026-09-22T04:08:46.495Z'],
+  }),
 });
 
 export const updateProfileBodySchema = z.object({ fullName: fullNameSchema });
