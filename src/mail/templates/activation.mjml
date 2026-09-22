@@ -23,7 +23,7 @@
   inner-padding="14px 28px"
   border-radius="8px"
   align="left"
-  padding="0 0 28px"
+  padding="0 25px 28px"
 >
   Kích hoạt tài khoản
 </mj-button>
@@ -40,7 +40,7 @@
   {{ url }}
 </mj-text>
 
-<mj-divider border-width="1px" border-color="#e4e4e7" padding="0 0 24px" />
+<mj-divider border-width="1px" border-color="#e4e4e7" padding="0 25px 24px" />
 
 <mj-text font-size="13px" color="#71717a">
   Liên kết hết hạn sau {{ expiryHours }} giờ.
