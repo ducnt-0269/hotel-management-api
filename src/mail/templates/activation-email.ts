@@ -2,8 +2,8 @@ import escapeHtml from 'escape-html';
 
 import type { User } from '../../users/entities/user.entity.js';
 
-// One inline template while there is exactly one mail. When F-015 adds the
-// booking mails, move these to a template adapter — Handlebars escapes on its
+// One inline template while there is exactly one mail. When the booking
+// mails arrive, move these to a template adapter — Handlebars escapes on its
 // own, which is the job escapeHtml() is doing by hand here.
 export function activationEmail(user: User, activationUrl: string) {
   const name = escapeHtml(user.fullName);

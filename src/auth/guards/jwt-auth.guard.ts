@@ -7,7 +7,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import type { ExecutionContext } from '@nestjs/common';
 
 // Registered as APP_GUARD: every endpoint needs a valid token unless it is
-// marked @Public() (NFR-004).
+// marked @Public().
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {

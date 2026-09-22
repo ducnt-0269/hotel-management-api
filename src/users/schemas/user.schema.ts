@@ -23,7 +23,7 @@ export const fullNameSchema = z
 
 // `id` is a bigint, which the pg driver hands back as a string; coerce so the
 // API returns an integer (api-list §2). `passwordHash` is absent on purpose —
-// that absence is what keeps it out of every response (NFR-003).
+// that absence is what keeps it out of every response.
 export const userResponseSchema = z.object({
   id: z.coerce.number().int(),
   email: z.string(),

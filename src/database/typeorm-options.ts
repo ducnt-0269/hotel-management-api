@@ -13,7 +13,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 
 // Shared by the Nest module and the TypeORM CLI data source so both talk to
 // the same database with the same migration set. Schema changes go through
-// migrations only (NFR-006), never `synchronize`.
+// migrations only, never `synchronize`.
 export function buildTypeOrmOptions(env: DatabaseEnv): DataSourceOptions {
   return {
     type: 'postgres',

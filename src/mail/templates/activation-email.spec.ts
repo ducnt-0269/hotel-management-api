@@ -18,7 +18,7 @@ describe('activationEmail', () => {
   });
 
   // A name reaches the mail from a public endpoint, so it is untrusted input
-  // in an HTML sink — F-015 will copy this template shape to mail admins.
+  // in an HTML sink — the booking mails will copy this shape to mail admins.
   it('escapes markup in the name instead of rendering it', () => {
     const mail = activationEmail(
       userWithName('</p><a href="https://evil.example">Xác nhận</a><p>'),
