@@ -101,7 +101,7 @@ kỳ lưu trú mà chính nó xin.
 | --- | --- | --- |
 | Room type | Input | Bắt buộc. Đúng một loại phòng cho mỗi request. Phải tồn tại và có số phòng lớn hơn 0. |
 | Room count | Input | Bắt buộc. Một số nguyên từ 1 đến 5. |
-| Check-in date | Input | Bắt buộc. Một ngày lịch, không sớm hơn hôm nay và không xa quá 12 tháng. |
+| Check-in date | Input | Bắt buộc. Một ngày lịch, sớm nhất là ngày mai (giờ khách sạn) và không xa quá 12 tháng. |
 | Check-out date | Input | Bắt buộc. Một ngày lịch. Phải rơi sau ngày check-in, và kỳ lưu trú không quá 30 đêm. |
 | Requesting user | Input (derived) | Lấy từ phiên đăng nhập, không bao giờ nhận từ phía gọi. Chỉ ROLE-002. |
 | Request reference | Output | Định danh request vừa ghi nhận để user tìm lại được trong lịch sử của mình (F-009). |
@@ -122,7 +122,7 @@ kỳ lưu trú mà chính nó xin.
 
 - Một request nêu đúng một loại phòng và từ 1 đến 5 phòng của loại đó. Loại phòng phải tồn tại và có
   số phòng lớn hơn 0.
-- Ngày check-in không được nằm trong quá khứ, cũng không xa quá 12 tháng.
+- Ngày check-in sớm nhất là ngày mai theo giờ khách sạn (Asia/Saigon), và không xa quá 12 tháng.
 - Ngày check-out phải rơi sau ngày check-in, và kỳ lưu trú không quá 30 đêm.
 - Mọi phép kiểm chạy ở phía server khi request được gửi. Request trượt bất kỳ phép kiểm nào đều bị
   từ chối nguyên khối: không ghi nhận gì và không giữ chỗ nào.
@@ -245,3 +245,4 @@ F-011 (quyết định của admin) và F-012 (thanh toán). Chưa cái nào đ�
 | 2026-09-19 | — | Dịch phần diễn giải sang tiếng Việt; heading, tên cột, mã tham chiếu và tên trạng thái giữ tiếng Anh |
 | 2026-09-19 | — | **Đơn vị được bán đổi từ phòng cụ thể sang loại phòng.** Lý do: sheet gốc chỉ viết "phòng", không hề nói "phòng cụ thể" — cách đọc hẹp đó là của dự án, và nó khiến thuộc tính phòng bị lặp trên mọi phòng giống nhau, đồng thời buộc request nhiều phòng phải có bảng con chép lại trạng thái. Hệ thống lại không có nhận phòng hay xếp phòng, nên không có ai dùng tới danh sách phòng vật lý. Sửa §1 Summary, §2, §3 (trigger, preconditions, basic flow, E-1/E-3/E-4/E-5), §4, §5.1, §5.3 (`Overlap` → `Capacity`, Holding rooms, Amount, All or nothing), §5.4; §6 sửa AC-1/2/3/5/6/7/11/12 và thêm AC-15. Giữ nguyên: bảng States, Legal transitions, Hold expiry, Event log, §5.2, và AC-4/8/9/10/13/14 |
 | 2026-09-19 | — | Chạy bù 4 cổng duyệt §3–§6 mà lượt sửa trước đã bỏ qua. Kết quả: bỏ câu thừa ở §3.1 bước 1; đổi `Arrival date`/`Departure date` → `Check-in date`/`Check-out date` và `Room hold` từ `Persisted` → `Derived` ở §4; §5.2 đổi "phòng" → "loại phòng"; §5.4 chép đủ vế "403 khi sai quyền" của NFR-004; §6 sửa AC-9 và **thêm AC-16** cho quy tắc §5.2 "chỉ ROLE-002 tạo được request" — quy tắc này trước đó không có acceptance criterion nào |
+| 2026-09-23 | — | §4, §5.1: ngày check-in sớm nhất đổi từ **hôm nay** sang **ngày mai**. Lý do: hold hết hạn lúc 00:00 ngày check-in (§5.3 Hold expiry), nên request check-in hôm nay có `expiresAt` nằm trong quá khứ ngay lúc tạo — bị cron expire trong vòng một phút, admin không kịp duyệt. AC-13 giữ nguyên; check-in hôm nay giờ bị từ chối như các lỗi validation khác |
