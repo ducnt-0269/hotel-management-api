@@ -7,6 +7,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 
 import { User } from '../users/entities/user.entity.js';
+import { toUserResponse } from '../users/user.mapper.js';
 import {
   activationTokenExpiry,
   generateActivationToken,
@@ -14,6 +15,8 @@ import {
 } from './activation-token.js';
 import { UserEmailVerificationToken } from './entities/user-email-verification-token.entity.js';
 import { UserEmailVerification } from './entities/user-email-verification.entity.js';
+
+import type { UserResponse } from '../users/schemas/user.schema.js';
 
 @Injectable()
 export class AccountActivationService {
@@ -31,7 +34,7 @@ export class AccountActivationService {
     return raw;
   }
 
-  async activate(rawToken: string): Promise<User> {
+  async activate(rawToken: string): Promise<UserResponse> {
     const tokenHash = hashActivationToken(rawToken);
 
     return this.dataSource.transaction(async (manager) => {
@@ -59,7 +62,9 @@ export class AccountActivationService {
       await manager.insert(UserEmailVerification, { userId: token.userId });
       await manager.delete(UserEmailVerificationToken, { id: token.id });
 
-      return manager.findOneByOrFail(User, { id: token.userId });
+      return toUserResponse(
+        await manager.findOneByOrFail(User, { id: token.userId }),
+      );
     });
   }
 }

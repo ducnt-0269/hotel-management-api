@@ -35,11 +35,10 @@ export const roomTypeIdParamSchema = z.coerce
   .max(Number.MAX_SAFE_INTEGER);
 
 export const roomTypeResponseSchema = z.object({
-  // Both are bigints, so strings from the driver; they leave as integers.
-  id: z.coerce.number().int(),
+  id: z.number().int(),
   name: z.string(),
   description: z.string(),
-  pricePerNight: z.coerce.number().int(),
+  pricePerNight: z.number().int(),
   totalRooms: z.number().int(),
   amenities: z.array(amenityResponseSchema),
   createdAt: z.date().meta(timestamp),
@@ -51,3 +50,5 @@ export const roomTypeListResponseSchema = paginatedSchema(
 );
 
 export type ListRoomTypesQuery = z.infer<typeof listRoomTypesQuerySchema>;
+
+export type RoomTypeResponse = z.infer<typeof roomTypeResponseSchema>;

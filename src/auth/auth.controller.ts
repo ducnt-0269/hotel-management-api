@@ -14,7 +14,7 @@ import {
   registerBodySchema,
 } from './schemas/auth.schema.js';
 
-import type { User } from '../users/entities/user.entity.js';
+import type { UserResponse } from '../users/schemas/user.schema.js';
 import type { LoginBody, RegisterBody } from './schemas/auth.schema.js';
 
 @Controller('auth')
@@ -33,7 +33,7 @@ export class AuthController {
   @ApiErrorResponse(409, 'Email is already registered')
   register(
     @Body({ schema: registerBodySchema }) body: RegisterBody,
-  ): Promise<User> {
+  ): Promise<UserResponse> {
     return this.authService.register(body);
   }
 
@@ -52,7 +52,7 @@ export class AuthController {
   )
   activate(
     @Query({ schema: activateQuerySchema }) { token }: { token: string },
-  ): Promise<User> {
+  ): Promise<UserResponse> {
     return this.accountActivationService.activate(token);
   }
 

@@ -8,10 +8,12 @@ import { EntityManager, QueryFailedError, Repository } from 'typeorm';
 
 import { hashPassword, verifyPassword } from '../common/security/password.js';
 import { User } from './entities/user.entity.js';
+import { toUserResponse } from './user.mapper.js';
 
 import type {
   ChangePasswordBody,
   UpdateProfileBody,
+  UserResponse,
 } from './schemas/user.schema.js';
 
 const UNIQUE_VIOLATION = '23505';
@@ -66,9 +68,12 @@ export class UsersService {
     }
   }
 
-  updateProfile(user: User, { fullName }: UpdateProfileBody): Promise<User> {
+  async updateProfile(
+    user: User,
+    { fullName }: UpdateProfileBody,
+  ): Promise<UserResponse> {
     user.fullName = fullName;
-    return this.usersRepository.save(user);
+    return toUserResponse(await this.usersRepository.save(user));
   }
 
   async changePassword(

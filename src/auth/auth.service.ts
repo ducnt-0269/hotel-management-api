@@ -9,12 +9,17 @@ import { DataSource } from 'typeorm';
 
 import { verifyPassword } from '../common/security/password.js';
 import { MailService } from '../mail/mail.service.js';
+import { toUserResponse } from '../users/user.mapper.js';
 import { UsersService } from '../users/users.service.js';
 import { AccountActivationService } from './account-activation.service.js';
 
-import type { User } from '../users/entities/user.entity.js';
+import type { UserResponse } from '../users/schemas/user.schema.js';
 import type { JwtPayload } from './jwt.strategy.js';
-import type { LoginBody, RegisterBody } from './schemas/auth.schema.js';
+import type {
+  AuthResponse,
+  LoginBody,
+  RegisterBody,
+} from './schemas/auth.schema.js';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +31,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(body: RegisterBody): Promise<User> {
+  async register(body: RegisterBody): Promise<UserResponse> {
     const { user, rawToken } = await this.dataSource.transaction(
       async (manager) => {
         const user = await this.usersService.createUnverified(manager, body);
@@ -42,10 +47,10 @@ export class AuthService {
 
     // Enqueued after the commit so a rolled-back registration never mails.
     await this.mailService.enqueueActivationEmail(user, rawToken);
-    return user;
+    return toUserResponse(user);
   }
 
-  async login({ email, password }: LoginBody) {
+  async login({ email, password }: LoginBody): Promise<AuthResponse> {
     const user = await this.usersService.findByEmail(email);
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid email or password');
@@ -59,6 +64,9 @@ export class AuthService {
     }
 
     const payload: JwtPayload = { sub: user.id, role: user.role };
-    return { accessToken: await this.jwtService.signAsync(payload), user };
+    return {
+      accessToken: await this.jwtService.signAsync(payload),
+      user: toUserResponse(user),
+    };
   }
 }

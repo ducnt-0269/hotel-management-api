@@ -27,3 +27,4 @@ export const authResponseSchema = z.object({
 
 export type RegisterBody = z.infer<typeof registerBodySchema>;
 export type LoginBody = z.infer<typeof loginBodySchema>;
+export type AuthResponse = z.infer<typeof authResponseSchema>;

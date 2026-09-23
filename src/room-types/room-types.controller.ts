@@ -12,8 +12,10 @@ import {
 } from './schemas/room-type.schema.js';
 
 import type { Paginated } from '../common/pagination/paginate.js';
-import type { RoomTypeWithAmenities } from './room-types.service.js';
-import type { ListRoomTypesQuery } from './schemas/room-type.schema.js';
+import type {
+  ListRoomTypesQuery,
+  RoomTypeResponse,
+} from './schemas/room-type.schema.js';
 
 // `@Public()` sits per method, not on the class: there is no `@Public(false)`,
 // so a class-level mark would quietly make the later admin routes public.
@@ -29,7 +31,7 @@ export class RoomTypesController {
   })
   list(
     @Query({ schema: listRoomTypesQuerySchema }) query: ListRoomTypesQuery,
-  ): Promise<Paginated<RoomTypeWithAmenities>> {
+  ): Promise<Paginated<RoomTypeResponse>> {
     return this.roomTypesService.list(query);
   }
 
@@ -42,7 +44,7 @@ export class RoomTypesController {
   @ApiErrorResponse(404, 'Room type not found')
   findOne(
     @Param('id', { schema: roomTypeIdParamSchema }) id: number,
-  ): Promise<RoomTypeWithAmenities> {
+  ): Promise<RoomTypeResponse> {
     return this.roomTypesService.findOne(id);
   }
 }
