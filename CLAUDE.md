@@ -57,8 +57,8 @@ lives in `src/auth/`, not `src/users/`. Injected properties are named after thei
   `StandardSchemaSerializerInterceptor` (declared per route with `@RespondsWith`, see below).
   `class-validator` / `class-transformer` were removed on purpose; do not reintroduce them.
 - **Auth is on by default**: `JwtAuthGuard` is registered as `APP_GUARD`, so every route needs a bearer
-  token unless it carries `@Public()` (register, activate, login, health). `RolesGuard` lands with the
-  first admin route.
+  token unless it carries `@Public()` (register, activate, login, health). `RolesGuard` (second
+  `APP_GUARD`, after `JwtAuthGuard`) enforces `@Roles(...)`; a route without it is open to every role.
 - **TypeORM + Postgres**, migrations only (`synchronize: false`); every migration needs a working
   `down` (NFR-006). Enums are `varchar` + `CHECK`, never Postgres native enums.
   `migration:generate` diffs entities against the DB named in `.env` and **drops any index entity
@@ -92,8 +92,9 @@ Key facts from the requirements that shape everything (see `project/02_requireme
 
 - The unit sold is a **room type**, not a physical room. There is no `rooms` table by design.
 - Capacity is checked **per day** over the half-open range `[check_in_date, check_out_date)`; a request
-  is refused if any single day would exceed `total_rooms` (NFR-005 requires the database, not only the
-  service, to enforce this — mechanism still open, see `database-design.md` §7).
+  is refused if any single day would exceed `total_rooms` (NFR-005). Today the service checks it inside a transaction that
+  first row-locks the `room_types` row (`FOR UPDATE`); a true DB-level constraint is still deferred
+  (`database-design.md` §7). Any code that writes `room_types` waits behind that lock by design.
 - Requests hold rooms while `pending` or `approved`; a pending hold expires at
   `min(created_at + 24h, 00:00 Asia/Saigon on check-in day)`.
 - Business-rule numbers (1–5 rooms, ≤30 nights, ≤12 months ahead) live in app config/validation, not
