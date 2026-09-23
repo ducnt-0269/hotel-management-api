@@ -1,4 +1,8 @@
-import { holdExpiry, stayNights } from './booking-request-dates.js';
+import {
+  holdExpiry,
+  stayNightDates,
+  stayNights,
+} from './booking-request-dates.js';
 
 describe('booking request dates', () => {
   describe('stayNights', () => {
@@ -9,6 +13,16 @@ describe('booking request dates', () => {
       ['2026-10-12', '2026-10-10', -2],
     ])('%s → %s is %i nights', (checkIn, checkOut, nights) => {
       expect(stayNights(checkIn, checkOut)).toBe(nights);
+    });
+  });
+
+  describe('stayNightDates', () => {
+    it('lists each night, leaving out the check-out day', () => {
+      expect(stayNightDates('2026-10-30', '2026-11-02')).toEqual([
+        '2026-10-30',
+        '2026-10-31',
+        '2026-11-01',
+      ]);
     });
   });
 

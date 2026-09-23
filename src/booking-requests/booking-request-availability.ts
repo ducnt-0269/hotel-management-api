@@ -1,43 +1,44 @@
-import { ConflictException } from '@nestjs/common';
+import { LessThan, MoreThan } from 'typeorm';
+
+import { stayNightDates } from './booking-request-dates.js';
+import { BookingRequest } from './entities/booking-request.entity.js';
 
 import type { RoomType } from '../room-types/entities/room-type.entity.js';
-import type { CreateBookingRequestBody } from './schemas/booking-request.schema.js';
 import type { EntityManager } from 'typeorm';
 
-// Nights of the stay where the rooms already held, plus this request, would
-// exceed the room type's total. Checked per night, never summed over the
-// stay: stays overlap on some nights and not others, so a request can fit the
-// stay as a whole and still overflow on a single night. A pending request
-// stops holding the moment its hold expires, whether or not the sweep has
-// marked it expired yet.
-const OVERBOOKED_NIGHTS_SQL = `
-  SELECT to_char(stay.night, 'YYYY-MM-DD') AS night
-    FROM generate_series($2::date, $3::date - 1, interval '1 day') AS stay(night)
-    LEFT JOIN booking_requests held
-      ON held.room_type_id = $1
-     AND held.status IN ('pending', 'approved')
-     AND (held.status = 'approved' OR held.expires_at > now())
-     AND held.check_in_date <= stay.night
-     AND held.check_out_date > stay.night
-   GROUP BY stay.night
-  HAVING COALESCE(SUM(held.rooms_requested), 0) + $4 > $5
-   ORDER BY stay.night`;
-
-export async function ensureNoOverbookedNight(
+// Rooms still free on each night of the stay. Pass the caller's transaction
+// manager to read behind its locks, or `dataSource.manager` for a plain read.
+export async function availableRoomsPerNight(
   manager: EntityManager,
   roomType: RoomType,
-  body: CreateBookingRequestBody,
-): Promise<void> {
-  const rows: { night: string }[] = await manager.query(OVERBOOKED_NIGHTS_SQL, [
-    roomType.id,
-    body.checkInDate,
-    body.checkOutDate,
-    body.roomsRequested,
-    roomType.totalRooms,
+  checkInDate: string,
+  checkOutDate: string,
+): Promise<{ night: string; available: number }[]> {
+  // Requests holding rooms on at least one night of the stay. A pending one
+  // stops holding once it expires, even before the sweep marks it expired.
+  const overlapsStay = {
+    roomTypeId: roomType.id,
+    checkInDate: LessThan(checkOutDate),
+    checkOutDate: MoreThan(checkInDate),
+  };
+  const holds = await manager.findBy(BookingRequest, [
+    { ...overlapsStay, status: 'approved' },
+    { ...overlapsStay, status: 'pending', expiresAt: MoreThan(new Date()) },
   ]);
-  if (rows.length > 0) {
-    throw new ConflictException(
-      `Not enough rooms on ${rows.map(({ night }) => night).join(', ')}`,
-    );
-  }
+
+  return stayNightDates(checkInDate, checkOutDate).map((night) => ({
+    night,
+    available: roomType.totalRooms - roomsHeldOn(night, holds),
+  }));
+}
+
+function roomsHeldOn(night: string, holds: BookingRequest[]): number {
+  return holds
+    .filter((hold) => coversNight(hold, night))
+    .reduce((sum, hold) => sum + hold.roomsRequested, 0);
+}
+
+// The check-out day is not a night of the stay.
+function coversNight(hold: BookingRequest, night: string): boolean {
+  return hold.checkInDate <= night && night < hold.checkOutDate;
 }

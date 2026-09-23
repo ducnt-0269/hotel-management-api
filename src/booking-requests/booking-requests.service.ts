@@ -7,7 +7,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 
 import { RoomType } from '../room-types/entities/room-type.entity.js';
-import { ensureNoOverbookedNight } from './booking-request-availability.js';
+import { availableRoomsPerNight } from './booking-request-availability.js';
 import { toBookingRequestResponse } from './booking-request.mapper.js';
 import { BookingRequest } from './entities/booking-request.entity.js';
 import { newBookingRequest } from './new-booking-request.js';
@@ -31,7 +31,7 @@ export class BookingRequestsService {
         manager,
         body.roomTypeId,
       );
-      await ensureNoOverbookedNight(manager, roomType, body);
+      await this.ensureNoOverbookedNight(manager, roomType, body);
 
       const bookingRequest = await manager.save(
         BookingRequest,
@@ -56,5 +56,30 @@ export class BookingRequestsService {
       throw new ConflictException('Room type is not bookable');
     }
     return roomType;
+  }
+
+  private async ensureNoOverbookedNight(
+    manager: EntityManager,
+    roomType: RoomType,
+    { checkInDate, checkOutDate, roomsRequested }: CreateBookingRequestBody,
+  ): Promise<void> {
+    const nights = await availableRoomsPerNight(
+      manager,
+      roomType,
+      checkInDate,
+      checkOutDate,
+    );
+
+    // Per night, not over the whole stay: a stay can fit overall yet overflow
+    // on a single night.
+    const shortNights = nights
+      .filter(({ available }) => available < roomsRequested)
+      .map(({ night }) => night);
+
+    if (shortNights.length > 0) {
+      throw new ConflictException(
+        `Not enough rooms on ${shortNights.join(', ')}`,
+      );
+    }
   }
 }
