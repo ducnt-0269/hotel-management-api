@@ -132,6 +132,12 @@ Never write code that updates `status` without inserting the matching outcome ro
 
 - `@RespondsWith(schema, { status, description })` does both jobs — response filtering and the
   documented body (via `z.toJSONSchema`). Do not also add `@SerializeOptions`.
+- A response schema is the wire contract: no `z.coerce`, no `.transform()` (transforms have no JSON Schema
+  form, and `z.input` of a coerced field is `unknown`). Its type is `z.infer`, never hand-written.
+  `to<Entity>Response()` in `<entity>.mapper.ts` at the module root builds that exact shape — bigint
+  strings become integers there with `Number(...)`; the schema file stays pure Zod. A service method
+  backing a route returns `<Entity>Response`; a route that calls no service converts in the
+  controller. `z.coerce` stays for input (query, params, env) only.
 - Every collection uses the `{ data, meta }` envelope, `paginatedSchema(item)` — never a bare array.
   Nest's serializer validates an array response element by element, so a top-level `z.array(...)`
   is checked against each element and throws; the envelope sidesteps that entirely.
