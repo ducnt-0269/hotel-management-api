@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, LessThan } from 'typeorm';
 
 import { BookingRequestExpiration } from './entities/booking-request-expiration.entity.js';
 import { BookingRequest } from './entities/booking-request.entity.js';
@@ -11,8 +11,8 @@ import { BookingRequest } from './entities/booking-request.entity.js';
 // so this only brings `status` and the outcome table in line and can run
 // every half hour.
 @Injectable()
-export class HoldExpiryService {
-  private readonly logger = new Logger(HoldExpiryService.name);
+export class BookingRequestExpirationService {
+  private readonly logger = new Logger(BookingRequestExpirationService.name);
 
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
@@ -36,8 +36,8 @@ export class HoldExpiryService {
         .createQueryBuilder()
         .update(BookingRequest)
         .set({ status: 'expired' })
-        .where(`status = 'pending'`)
-        .andWhere('expires_at < now()')
+        .where({ status: 'pending' })
+        .andWhere({ expiresAt: LessThan(new Date()) })
         .returning('id')
         .execute();
       const ids = (raw as { id: string }[]).map((row) => row.id);

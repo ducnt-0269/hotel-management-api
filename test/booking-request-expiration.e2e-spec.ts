@@ -2,10 +2,10 @@ import { DateTime } from 'luxon';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
+import { BookingRequestExpirationService } from '../src/booking-requests/booking-request-expiration.service.js';
 import { HOTEL_TIME_ZONE } from '../src/booking-requests/booking-request.constants.js';
 import { BookingRequestExpiration } from '../src/booking-requests/entities/booking-request-expiration.entity.js';
 import { BookingRequest } from '../src/booking-requests/entities/booking-request.entity.js';
-import { HoldExpiryService } from '../src/booking-requests/hold-expiry.service.js';
 import { signIn } from './support/auth.js';
 import { createTestApp } from './support/create-test-app.js';
 import { createBookingRequest } from './support/factories/booking-request.factory.js';
@@ -51,7 +51,7 @@ describe('booking request hold expiry (e2e)', () => {
       expiresAt: new Date(Date.now() - 60_000),
     });
 
-    await app.get(HoldExpiryService).expireOverdue();
+    await app.get(BookingRequestExpirationService).expireOverdue();
 
     const stored = await repository(BookingRequest).findOneByOrFail({
       id: overdue.id,
@@ -94,7 +94,7 @@ describe('booking request hold expiry (e2e)', () => {
       expiresAt: new Date(Date.now() - 60_000),
     });
 
-    await app.get(HoldExpiryService).expireOverdue();
+    await app.get(BookingRequestExpirationService).expireOverdue();
 
     const rows = await repository(BookingRequest).find({
       order: { id: 'ASC' },
@@ -118,8 +118,8 @@ describe('booking request hold expiry (e2e)', () => {
     });
 
     const sweeps = await Promise.all([
-      app.get(HoldExpiryService).expireOverdue(),
-      app.get(HoldExpiryService).expireOverdue(),
+      app.get(BookingRequestExpirationService).expireOverdue(),
+      app.get(BookingRequestExpirationService).expireOverdue(),
     ]);
 
     // Sum, not [0, 1]: the real cron may claim the row first and leave both at 0.

@@ -72,7 +72,7 @@ export class BookingRequest {
   @Column({ type: 'varchar', length: 10, default: 'pending' })
   status: BookingRequestStatus;
 
-  // Scanned every half hour by the hold-expiry sweep.
+  // Scanned every half hour by the expiration sweep.
   @Index({ where: `status = 'pending'` })
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt: Date;
