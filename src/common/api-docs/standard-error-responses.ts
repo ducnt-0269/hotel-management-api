@@ -4,7 +4,7 @@ const METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
 // The validation pipe's shape: `message` is one entry per failed field.
 const VALIDATION_FAILED = {
-  description: 'Body failed validation',
+  description: 'Request failed validation',
   content: {
     'application/json': {
       example: {
@@ -26,18 +26,21 @@ const NOT_AUTHENTICATED = {
   },
 };
 
-// Every route that takes a body can fail validation, and every guarded route
-// can be called without a token. Deriving both from the finished document beats
-// repeating two decorators per route — and it cannot drift, because the
-// document is the same one Scalar renders. A route that documents its own 400
-// or 401 keeps it.
+// Every route that takes a body — or a validated path or query parameter —
+// can fail validation, and every guarded route can be called without a token.
+// Deriving both from the finished document beats repeating two decorators per
+// route, and it cannot drift, because the document is the same one Scalar
+// renders. A route that documents its own 400 or 401 keeps it.
 export function addStandardErrorResponses(document: OpenAPIObject): void {
   for (const pathItem of Object.values(document.paths)) {
     for (const method of METHODS) {
       const operation = pathItem[method] as OperationObject | undefined;
       if (!operation?.responses) continue;
 
-      if (operation.requestBody && !operation.responses['400']) {
+      if (
+        (operation.requestBody || operation.parameters?.length) &&
+        !operation.responses['400']
+      ) {
         operation.responses['400'] = VALIDATION_FAILED;
       }
       if (operation.security?.length && !operation.responses['401']) {
