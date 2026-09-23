@@ -9,12 +9,14 @@ import {
   updateProfileBodySchema,
   userResponseSchema,
 } from './schemas/user.schema.js';
+import { toUserResponse } from './user.mapper.js';
 import { UsersService } from './users.service.js';
 
 import type { User } from './entities/user.entity.js';
 import type {
   ChangePasswordBody,
   UpdateProfileBody,
+  UserResponse,
 } from './schemas/user.schema.js';
 
 @ApiBearerAuth()
@@ -27,8 +29,8 @@ export class MeController {
     status: 200,
     description: 'The signed-in user',
   })
-  profile(@CurrentUser() user: User): User {
-    return user;
+  profile(@CurrentUser() user: User): UserResponse {
+    return toUserResponse(user);
   }
 
   @Patch()
@@ -39,7 +41,7 @@ export class MeController {
   updateProfile(
     @CurrentUser() user: User,
     @Body({ schema: updateProfileBodySchema }) body: UpdateProfileBody,
-  ): Promise<User> {
+  ): Promise<UserResponse> {
     return this.usersService.updateProfile(user, body);
   }
 

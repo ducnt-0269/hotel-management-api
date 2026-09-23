@@ -21,11 +21,8 @@ export const fullNameSchema = z
   // A literal space, not `\s`: that class also matches newlines and tabs.
   .regex(/^[\p{L}\p{M} '’.-]+$/u, 'Full name contains invalid characters');
 
-// `id` is a bigint, which the pg driver hands back as a string; coerce so the
-// API returns an integer (api-list §2). `passwordHash` is absent on purpose —
-// that absence is what keeps it out of every response.
 export const userResponseSchema = z.object({
-  id: z.coerce.number().int(),
+  id: z.number().int(),
   email: z.string(),
   fullName: z.string(),
   role: z.enum(['user', 'admin']),
@@ -46,3 +43,5 @@ export const changePasswordBodySchema = z.object({
 
 export type UpdateProfileBody = z.infer<typeof updateProfileBodySchema>;
 export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>;
+
+export type UserResponse = z.infer<typeof userResponseSchema>;
