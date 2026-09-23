@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 
+import { HOLD_HOURS } from '../../../src/booking-requests/booking-request.constants.js';
 import { BookingRequest } from '../../../src/booking-requests/entities/booking-request.entity.js';
 
 import type { BookingRequestStatus } from '../../../src/booking-requests/entities/booking-request.entity.js';
@@ -35,7 +36,8 @@ export async function createBookingRequest(
       totalAmount: '0',
       status: attributes.status ?? 'pending',
       expiresAt:
-        attributes.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000),
+        attributes.expiresAt ??
+        new Date(Date.now() + HOLD_HOURS * 60 * 60 * 1000),
     }),
   );
 }

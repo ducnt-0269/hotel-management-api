@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -27,7 +27,6 @@ export class BookingRequestsController {
   // Guests raise requests; admins decide on them, never raise them.
   @Roles('user')
   @Post()
-  @HttpCode(201)
   @RespondsWith(bookingRequestResponseSchema, {
     status: 201,
     description: 'Request recorded as pending; its rooms are held',
