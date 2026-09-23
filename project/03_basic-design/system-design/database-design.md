@@ -122,7 +122,7 @@ Mọi bảng: `id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, mọi cột 
 | room_type_id    | bigint      | FK → room_types                                                                    |                                                                    |
 | rooms_requested | integer     | CHECK > 0                                                                          | 1..5 kiểm ở app (F-008 §5.1)                                       |
 | check_in_date   | date        |                                                                                    |                                                                    |
-| check_out_date  | date        | CHECK (check_out_date > check_in_date)                                             | Nửa mở `[in, out)`; ≤ 30 đêm, không quá khứ, ≤ 12 tháng kiểm ở app |
+| check_out_date  | date        | CHECK (check_out_date > check_in_date)                                             | Nửa mở `[in, out)`; ≤ 30 đêm, từ ngày mai, ≤ 12 tháng kiểm ở app |
 | total_amount    | bigint      |                                                                                    | VND; chốt lúc tạo, không tính lại (AC-11)                          |
 | status          | varchar(10) | CHECK IN ('pending','approved','rejected','cancelled','expired') DEFAULT 'pending' | Projection của 4 bảng outcome                                      |
 | expires_at      | timestamptz |                                                                                    | App tính: `min(created_at + 24h, check_in_date 00:00 Asia/Saigon)` |
@@ -203,9 +203,9 @@ UPDATE <parent> SET status = '<new>' WHERE id = $1 AND status = '<expected>';
 -- rowCount = 1 → COMMIT; = 0 → ROLLBACK (409: trạng thái đã đổi bởi người khác)
 ```
 
-Riêng tạo booking (F-008): trong cùng transaction, khoá theo `room_type_id`, đếm `SUM(rooms_requested)`
+Riêng tạo booking (F-008): trong cùng transaction, khoá dòng `room_types` (`SELECT … FOR UPDATE`), đếm `SUM(rooms_requested)`
 của request `pending`/`approved` **từng ngày** trong `[check_in_date, check_out_date)`, so với `total_rooms`,
-rồi mới INSERT. Cơ chế chặn ở tầng DB cho NFR-005 (trigger hay bảng đếm theo ngày) **chưa chốt** — xem §7.
+rồi mới INSERT. Ràng buộc thật ở tầng DB cho NFR-005 (trigger hay bảng đếm theo ngày) vẫn hoãn — xem §7.
 
 ## 6. Design Decisions
 
@@ -232,7 +232,7 @@ rồi mới INSERT. Cơ chế chặn ở tầng DB cho NFR-005 (trigger hay bả
 
 | #   | Item                                                                                                                                                                                  | Owner |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| 1   | Cơ chế chặn capacity ở tầng DB (NFR-005). **2026-09-21: tạm hoãn** — đi advisory lock (`pg_advisory_xact_lock(room_type_id)`) + kiểm tra trong transaction ở service; thêm ràng buộc thật ở DB (bảng `room_type_daily_inventory`) chỉ khi còn thời gian. Schema hiện tại không đổi | Dev   |
+| 1   | Cơ chế chặn capacity ở tầng DB (NFR-005). **2026-09-21: tạm hoãn** — đi advisory lock (`pg_advisory_xact_lock(room_type_id)`) + kiểm tra trong transaction ở service. **2026-09-23**: khoá đổi thành row lock trên `room_types`, xem §8; thêm ràng buộc thật ở DB (bảng `room_type_daily_inventory`) chỉ khi còn thời gian. Schema hiện tại không đổi | Dev   |
 | 2   | ~~TypeORM `^1.1.1` với `"type": "module"`~~ **Đã xác nhận 2026-09-21** bằng spike: `@Check`, `@Index({ where })` sinh SQL đúng; `migration:generate` / `run` / `revert` chạy qua `dist/database/data-source.js` (ESM, không cần ts-node). Script: `npm run migration:*` | Dev   |
 | 3   | Giảm `total_rooms` xuống dưới số đang giữ (F-007 / F-011) — câu hỏi treo từ `ba-memory.md`                                                                                            | BA    |
 
@@ -244,6 +244,7 @@ rồi mới INSERT. Cơ chế chặn ở tầng DB cho NFR-005 (trigger hay bả
 | --- | --- | --- |
 | 2026-09-22 | Transition kích hoạt chạy `UPDATE users ... WHERE status='unverified'` **trước**, rồi mới `INSERT user_email_verifications` — ngược thứ tự mô tả ở §5 | Hai request kích hoạt cùng token chạy song song: nếu INSERT trước, request thứ hai đâm vào UNIQUE `user_id` và nhận `23505` → 500. Cho UPDATE chạy trước thì nó chờ row lock của `users`, tỉnh dậy thấy `status` không còn `unverified` → `affected = 0` → 409 đúng như thiết kế. Vẫn một transaction, `status` không bao giờ đổi mà thiếu dòng outcome. Có e2e chứng minh (`settles concurrent activations of the same token`) |
 | 2026-09-22 | `users.email` lưu lower-case, UNIQUE đặt thẳng trên cột, thay cho unique index trên `lower(email)` | TypeORM `@Index` không diễn đạt được function index. Index viết tay trong migration còn tệ hơn: `RdbmsSchemaBuilder.dropOldIndices()` xoá mọi index của bảng mà entity metadata không biết, nên mỗi lần `migration:generate` sau này sẽ sinh một câu DROP cho nó. Chuẩn hoá lower-case lúc ghi và lúc tra cho ràng buộc tương đương, và TypeORM mô tả được trọn vẹn |
+| 2026-09-23 | Tạo booking khoá bằng row lock `SELECT … FROM room_types WHERE id = $1 FOR UPDATE` thay cho `pg_advisory_xact_lock(room_type_id)` | Cùng mức tuần tự hoá (một booking một lúc cho mỗi loại phòng) nhưng khoá chính dòng dữ liệu: mọi câu ghi vào dòng đó sau này (F-007 sửa `total_rooms`, xoá loại phòng) tự động phải chờ, không cần nhớ lấy chung một advisory lock; đọc dòng và khoá gộp một câu. Advisory lock được chọn lúc kiểm tra còn định nằm trong trigger — khi đã chuyển về service thì lý do đó không còn. e2e `never overbooks under concurrent requests` fail (4/5 request được nhận) khi bỏ khoá |
 
 ## 9. Revision History
 
@@ -251,3 +252,4 @@ rồi mới INSERT. Cơ chế chặn ở tầng DB cho NFR-005 (trigger hay bả
 | ---------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-21 | —          | Bản đầu tiên: 17 bảng, full scope must + should + could. Tổng hợp từ phiên table-design và research `plans/reports/researcher-260921-0938-immutable-booking-schema.md` |
 | 2026-09-22 | —          | Slice auth: `users`, `user_email_verification_tokens`, `user_email_verifications` đã có migration (`CreateUsers1790045477478`). Các bảng còn lại vẫn chỉ nằm trên giấy |
+| 2026-09-23 | —          | Slice booking: `booking_requests`, `booking_request_expirations` đã có migration (`CreateBookingRequests1790131444585`). Index `booking_requests (created_at)` để lại cho slice F-018 |
