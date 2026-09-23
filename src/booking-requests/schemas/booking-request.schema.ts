@@ -1,12 +1,13 @@
 import { DateTime } from 'luxon';
 import { z } from 'zod';
 
-import { HOTEL_TIME_ZONE, stayNights } from '../booking-request-dates.js';
-
-// Business-rule numbers live here, not in DB constraints: they may change.
-const MAX_ROOMS_PER_REQUEST = 5;
-const MAX_NIGHTS = 30;
-const MAX_MONTHS_AHEAD = 12;
+import { stayNights } from '../booking-request-dates.js';
+import {
+  HOTEL_TIME_ZONE,
+  MAX_MONTHS_AHEAD,
+  MAX_NIGHTS,
+  MAX_ROOMS_PER_REQUEST,
+} from '../booking-request.constants.js';
 
 const timestamp = {
   type: 'string',

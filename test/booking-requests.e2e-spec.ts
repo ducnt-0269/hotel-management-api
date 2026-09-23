@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { HOTEL_TIME_ZONE } from '../src/booking-requests/booking-request-dates.js';
+import { HOTEL_TIME_ZONE } from '../src/booking-requests/booking-request.constants.js';
 import { BookingRequest } from '../src/booking-requests/entities/booking-request.entity.js';
 import { RoomType } from '../src/room-types/entities/room-type.entity.js';
 import { signIn } from './support/auth.js';
