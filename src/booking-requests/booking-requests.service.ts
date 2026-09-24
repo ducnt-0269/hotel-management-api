@@ -8,7 +8,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { paginate, toSkipTake } from '../common/pagination/paginate.js';
 import { RoomType } from '../room-types/entities/room-type.entity.js';
-import { availableRoomsPerNight } from './booking-request-availability.js';
+import { availableRoomsPerNightByRoomType } from './booking-request-availability.js';
 import { holdExpiry, stayNights } from './booking-request-dates.js';
 import { toBookingRequestResponse } from './booking-request.mapper.js';
 import { BookingRequest } from './entities/booking-request.entity.js';
@@ -131,12 +131,14 @@ export class BookingRequestsService {
     roomType: RoomType,
     { checkInDate, checkOutDate, roomsRequested }: CreateBookingRequestBody,
   ): Promise<void> {
-    const nights = await availableRoomsPerNight(
-      manager,
-      roomType,
-      checkInDate,
-      checkOutDate,
-    );
+    const nights = (
+      await availableRoomsPerNightByRoomType(
+        manager,
+        [roomType],
+        checkInDate,
+        checkOutDate,
+      )
+    ).get(roomType.id)!;
 
     // Per night, not over the whole stay: a stay can fit overall yet overflow
     // on a single night.
