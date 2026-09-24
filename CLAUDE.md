@@ -26,7 +26,7 @@ npm run test:cov
 
 npx vitest run src/auth/activation-token.spec.ts                  # one unit file
 npx vitest run -t "should return"                                 # by test name
-npx vitest run --config vitest.config.e2e.ts test/health.e2e-spec.ts # one e2e file
+npx vitest run --config vitest.config.e2e.ts test/health/health.e2e-spec.ts # one e2e file
 npm run migration:generate -- src/database/migrations/CreateUsers      # then migration:run | revert | show
 
 curl -s localhost:8025/api/v1/messages                            # what Mailpit received
@@ -36,7 +36,8 @@ curl -s localhost:8025/api/v1/message/{id}/html-check             # client-compa
 
 Node 24 (`.nvmrc`). CI (`Quality gate`) runs lint → format:check → build → unit → e2e on every push and PR.
 
-Testing: e2e over HTTP against real Postgres is primary (one file per module, `resetDb(app)` in `beforeEach`,
+Testing: e2e over HTTP against real Postgres is primary (`test/` mirrors `src/`, one file per controller:
+`test/users/status-change/admin-user-status-change.e2e-spec.ts`; `resetDb(app)` in `beforeEach`,
 fixtures via fishery + faker in `test/support/factories/`); unit specs only for pure functions. No mocked repositories.
 e2e shares Redis db 0, the `mail` queue and Mailpit with `npm run start:dev`, so a run clears your dev inbox
 (`clearMailbox()` in `beforeEach`). Give e2e its own queue name / Redis db when that starts to hurt.
@@ -48,6 +49,17 @@ e2e shares Redis db 0, the `mail` queue and Mailpit with `npm run start:dev`, so
 An entity belongs to the module whose service INSERTs the row — hence `user_email_verifications`
 lives in `src/auth/`, not `src/users/`. Injected properties are named after their class:
 `authService`, `usersRepository`, `envService`.
+
+- **Slices.** The module root holds the resource itself, sorted by kind. Each lifecycle transition
+  that writes an outcome table gets a subfolder, files flat inside with full names kept, and owns its
+  controller, pathed at the sub-resource: `users/status-change/` (`@Controller('admin/users/:id')`
+  → `/deactivation`, `/reactivation`), `booking-requests/expiration/` (a cron, so no controller).
+  Two mirror transitions share one slice and one service; an outcome written as one step of a larger
+  flow (email verification) stays in that flow. No `index.ts` barrels, no deeper nesting.
+- **`admin-` prefix.** An admin route's controller and service always carry it
+  (`admin-users.controller.ts`, `status-change/admin-user-status-change.service.ts`); a schema or
+  mapper carries it only as the admin variant of a shape the user side also has. Entities never do.
+  Admin files import shared ones, never the reverse.
 
 ## Stack decisions already made
 
@@ -139,7 +151,9 @@ Never write code that updates `status` without inserting the matching outcome ro
 - A response schema is the wire contract: no `z.coerce`, no `.transform()` (transforms have no JSON Schema
   form, and `z.input` of a coerced field is `unknown`). Its type is `z.infer`, never hand-written.
   `to<Entity>Response()` in `<entity>.mapper.ts` at the module root builds that exact shape — bigint
-  strings become integers there with `Number(...)`; the schema file stays pure Zod. A service method
+  strings become integers there with `Number(...)`; the schema file stays pure Zod. A slice's schema
+  and mapper live in the slice, named after it (`status-change/user-status-change.mapper.ts`), never
+  added to the parent's files. A service method
   backing a route returns `<Entity>Response`; a route that calls no service converts in the
   controller. `z.coerce` stays for input (query, params, env) only.
 - Every collection uses the `{ data, meta }` envelope, `paginatedSchema(item)` — never a bare array.

@@ -22,7 +22,9 @@
 | Pagination                              | `?page=1&perPage=20` (tối đa 100) → `{ "data": [...], "meta": { "total", "page", "perPage" } }`                          |
 | Lọc list                                | Tên field (`status`, `roomTypeId`…) = khớp đúng giá trị. `q` = tìm tự do, chứa chuỗi, không phân biệt hoa thường, trên nhiều field (liệt kê ở từng API) |
 | Object đơn                              | Trả thẳng, không bọc                                                                                                     |
-| Không có gì để trả                      | Body rỗng (logout, đổi mật khẩu, delete)                                                                                 |
+| Không có gì để trả                      | 204, body rỗng (logout, đổi mật khẩu, delete)                                                                            |
+| `password`                              | Tối thiểu 8, tối đa **72 byte** — giới hạn thật của bcrypt, không phải 72 ký tự (tiếng Việt có dấu 3 byte/ký tự)         |
+| `fullName`                              | Chỉ chữ mọi hệ chữ + dấu tổ hợp + khoảng trắng + `' ’ . -`                                                               |
 | Tạo sub-resource (approval, rejection…) | `POST` → 201, body = bản ghi vừa tạo                                                                                     |
 | Lỗi                                     | Shape mặc định của NestJS: `{ "statusCode", "message", "error" }`; validation `message` là mảng `"<path>: <msg>"`        |
 | Mã lỗi                                  | 400 validation · 401 chưa đăng nhập · 403 sai quyền · 404 không có / không phải của mình · 409 trạng thái không cho phép |
@@ -76,7 +78,7 @@
 | No  | F-ID                | Method | Path                                 | Role        | Request                                                              | Response               | Note                                                                                     |
 | --- | ------------------- | ------ | ------------------------------------ | ----------- | -------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
 | 1   | F-001               | POST   | `/auth/register`                     | Visitor     | body: email, password, fullName                                      | User (unverified)      | 409 email trùng; phát job mail kích hoạt                                                 |
-| 2   | F-016               | GET    | `/auth/activate`                     | Visitor     | query: token                                                         | User (active)          | GET vì là link trong mail; 404 / 409 hết hạn                                             |
+| 2   | F-016               | GET    | `/auth/activate`                     | Visitor     | query: token                                                         | User (active)          | GET vì là link trong mail; 404 / 409 hết hạn. Token 32 byte ngẫu nhiên, lưu sha256 hex ở `token_hash`, TTL 24h; link `{APP_BASE_URL}/api/auth/activate?token=` (không có frontend nên trỏ thẳng vào API) |
 | 3   | F-002               | POST   | `/auth/login`                        | Visitor     | body: email, password                                                | Auth                   | 401 sai; 403 chưa kích hoạt / bị khoá                                                    |
 | 4   | F-002               | POST   | `/auth/logout`                       | User, Admin | —                                                                    | —                      | Stateless; client bỏ token                                                               |
 | 5   | F-003               | GET    | `/me`                                | User, Admin | —                                                                    | User                   |                                                                                          |
@@ -88,7 +90,7 @@
 | 11  | F-007               | POST   | `/admin/room-types`                  | Admin       | body: name, description, pricePerNight, totalRooms, amenities[]      | RoomType               | 409 name trùng                                                                           |
 | 12  | F-007               | PATCH  | `/admin/room-types/:id`              | Admin       | body: các field trên, tuỳ chọn                                       | RoomType               | `amenities` gửi = thay toàn bộ                                                           |
 | 13  | F-007               | DELETE | `/admin/room-types/:id`              | Admin       | —                                                                    | —                      | 409 khi đã có request (FK)                                                               |
-| 14  | F-008               | POST   | `/booking-requests`                  | User        | body: roomTypeId, roomsRequested, checkInDate, checkOutDate          | BookingRequest         | 409 ngừng bán / hết chỗ (message liệt kê ngày thiếu)                                     |
+| 14  | F-008               | POST   | `/booking-requests`                  | User        | body: roomTypeId, roomsRequested, checkInDate, checkOutDate          | BookingRequest         | Check-in sớm nhất là ngày mai. Admin → 403; `roomTypeId` không có → 404; 409 `Room type is not bookable` khi `totalRooms = 0`, 409 `Not enough rooms on <ngày>, …` liệt kê mọi đêm thiếu |
 | 15  | F-009               | GET    | `/booking-requests`                  | User        | query: page, perPage, status, roomTypeId                             | List\<BookingRequest\> | Chỉ của mình; `createdAt` giảm dần                                                       |
 | 16  | F-009               | GET    | `/booking-requests/:id`              | User        | —                                                                    | BookingRequest         | 404 nếu của user khác                                                                    |
 | 17  | F-010               | POST   | `/booking-requests/:id/cancellation` | User (chủ)  | —                                                                    | Outcome                | 409 không còn pending                                                                    |
@@ -115,7 +117,7 @@
 | --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | F-015     | Sau commit approval / rejection / expiration | Job `booking-request.notify` (BullMQ) → mail cho user, rejection kèm lý do                                            |
 | F-016     | Sau register                                 | Job `user.activation` → mail kèm link `/auth/activate?token=`                                                         |
-| F-008 E-4 | Cron mỗi 30 phút                             | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail |
+| F-008 E-4 | Cron mỗi 30 phút                             | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail. Kiểm tra chỗ trống đã bỏ qua hold quá hạn ngay lập tức, nên cron chỉ đồng bộ `status`; mọi transition từ `pending` (duyệt, huỷ) phải tự kiểm tra `expiresAt` |
 | F-020     | Cron 23:59 ngày cuối tháng                   | Tổng hợp doanh thu tháng (cùng service với No 30) → mail cho mọi admin                                                |
 
 ## 5. Open Items
@@ -134,14 +136,3 @@
 | Date | What changed | Why |
 | --- | --- | --- |
 | 2026-09-24 | Route chỉ admin chuyển xuống `/admin/...` (dòng 11–13, 18–19, 22–30); dòng 15–16 chỉ còn phần của user, phần admin tách thành dòng 31–32; export Excel (F-017) tách khỏi dòng 8 thành dòng 33 | Mỗi route một shape, service không rẽ nhánh theo role, một guard cho mỗi controller admin |
-
-## 7. Revision History
-
-| Date       | Updated by | Content                                                                           |
-| ---------- | ---------- | --------------------------------------------------------------------------------- |
-| 2026-09-21 | —          | Bản đầu tiên: 30 endpoint + 4 trigger, full scope. Lỗi dùng shape mặc định NestJS |
-| 2026-09-22 | —          | Ràng buộc input chốt thêm: `password` tối thiểu 8 và tối đa **72 byte** (giới hạn thật của bcrypt, không phải 72 ký tự — tiếng Việt có dấu 3 byte/ký tự); `fullName` chỉ nhận chữ mọi hệ chữ + dấu tổ hợp + khoảng trắng + `' ’ . -` |
-| 2026-09-22 | —          | Slice auth: dòng 1–7 đã implement. Token kích hoạt chốt là 32 byte ngẫu nhiên, lưu sha256 hex ở `token_hash`, TTL 24h, link `{APP_BASE_URL}/api/auth/activate?token=` (không có frontend nên trỏ thẳng vào API). `POST /auth/logout` và `PUT /me/password` trả 204 |
-| 2026-09-23 | —          | Slice booking: dòng 14 và trigger `F-008 E-4` (cron hết hạn hold, chưa gửi mail) đã implement. `POST /booking-requests` chỉ role `user` (admin → 403); 404 khi `roomTypeId` không tồn tại; 409 `Room type is not bookable` khi `totalRooms = 0`, 409 `Not enough rooms on <ngày>, …` liệt kê mọi đêm thiếu. Ngày check-in sớm nhất là ngày mai |
-| 2026-09-23 | —          | Cron hết hạn hold đổi từ mỗi phút sang **mỗi 30 phút**. Kiểm tra chỗ trống giờ bỏ qua request `pending` đã qua `expiresAt` ngay lập tức, nên cron chỉ còn đồng bộ `status` và ghi `booking_request_expirations`; tần suất không còn ảnh hưởng tới việc đặt được phòng. Duyệt đơn (F-011) phải tự kiểm tra `expiresAt` |
-| 2026-09-24 | —          | Đổi quy ước: route chỉ admin nằm dưới `/admin` (xem Deviations). Dòng 25–28 đã chạy ở `/api/admin/users` |
