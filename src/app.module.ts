@@ -22,7 +22,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
     AppConfigModule,
     DatabaseModule,
     I18nModule.forRoot({
-      fallbackLanguage: 'en',
+      fallbackLanguage: 'vi',
       loaderOptions: { path: join(here, 'i18n'), watch: false },
       resolvers: [AcceptLanguageResolver],
     }),

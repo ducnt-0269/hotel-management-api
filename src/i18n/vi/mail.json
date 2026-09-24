@@ -1,0 +1,16 @@
+{
+  "layout": {
+    "footer": "Bạn nhận được email này vì địa chỉ của bạn được dùng để đăng ký tài khoản Hotel Management. Nếu không phải bạn, hãy bỏ qua email này."
+  },
+  "activation": {
+    "subject": "Kích hoạt tài khoản Hotel Management",
+    "preview": "Liên kết kích hoạt hết hạn sau {expiryHours} giờ.",
+    "heading": "Kích hoạt tài khoản",
+    "greeting": "Xin chào {fullName},",
+    "body": "Tài khoản của bạn đã được tạo. Bấm nút bên dưới để kích hoạt và bắt đầu đặt phòng.",
+    "button": "Kích hoạt tài khoản",
+    "fallback": "Nút không bấm được? Dán liên kết này vào trình duyệt:",
+    "textBody": "Tài khoản của bạn đã được tạo. Mở liên kết sau để kích hoạt:",
+    "expiry": "Liên kết hết hạn sau {expiryHours} giờ."
+  }
+}

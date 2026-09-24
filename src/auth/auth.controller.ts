@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiNoContentResponse } from '@nestjs/swagger';
+import { I18nLang } from 'nestjs-i18n';
 
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
@@ -33,8 +34,10 @@ export class AuthController {
   @ApiErrorResponse(409, 'Email is already registered')
   register(
     @Body({ schema: registerBodySchema }) body: RegisterBody,
+    // The activation mail is written in the language the request asked for.
+    @I18nLang() lang: string,
   ): Promise<UserResponse> {
-    return this.authService.register(body);
+    return this.authService.register(body, lang);
   }
 
   // GET because it is the link in the activation email (api-list row 2).

@@ -1,0 +1,16 @@
+{
+  "layout": {
+    "footer": "You are receiving this email because your address was used to sign up for a Hotel Management account. If that wasn't you, you can ignore this email."
+  },
+  "activation": {
+    "subject": "Activate your Hotel Management account",
+    "preview": "The activation link expires in {expiryHours} hours.",
+    "heading": "Activate your account",
+    "greeting": "Hi {fullName},",
+    "body": "Your account has been created. Click the button below to activate it and start booking.",
+    "button": "Activate account",
+    "fallback": "Button not working? Paste this link into your browser:",
+    "textBody": "Your account has been created. Open the link below to activate it:",
+    "expiry": "The link expires in {expiryHours} hours."
+  }
+}

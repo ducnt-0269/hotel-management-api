@@ -4,14 +4,13 @@
   color="#18181b"
   padding-bottom="16px"
 >
-  Kích hoạt tài khoản
+  {{t 'mail.activation.heading'}}
 </mj-text>
 
-<mj-text padding-bottom="8px">Xin chào {{ fullName }},</mj-text>
+<mj-text padding-bottom="8px">{{t 'mail.activation.greeting' this}}</mj-text>
 
 <mj-text padding-bottom="28px">
-  Tài khoản của bạn đã được tạo. Bấm nút bên dưới để kích hoạt và bắt đầu đặt
-  phòng.
+  {{t 'mail.activation.body'}}
 </mj-text>
 
 <mj-button
@@ -25,11 +24,11 @@
   align="left"
   padding="0 25px 28px"
 >
-  Kích hoạt tài khoản
+  {{t 'mail.activation.button'}}
 </mj-button>
 
 <mj-text font-size="13px" color="#71717a" padding-bottom="4px">
-  Nút không bấm được? Dán liên kết này vào trình duyệt:
+  {{t 'mail.activation.fallback'}}
 </mj-text>
 <mj-text
   font-size="13px"
@@ -43,5 +42,5 @@
 <mj-divider border-width="1px" border-color="#e4e4e7" padding="0 25px 24px" />
 
 <mj-text font-size="13px" color="#71717a">
-  Liên kết hết hạn sau {{ expiryHours }} giờ.
+  {{t 'mail.activation.expiry' this}}
 </mj-text>
