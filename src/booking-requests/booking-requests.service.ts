@@ -3,24 +3,81 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, EntityManager } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 
+import { paginate, toSkipTake } from '../common/pagination/paginate.js';
 import { RoomType } from '../room-types/entities/room-type.entity.js';
 import { availableRoomsPerNight } from './booking-request-availability.js';
 import { holdExpiry, stayNights } from './booking-request-dates.js';
 import { toBookingRequestResponse } from './booking-request.mapper.js';
 import { BookingRequest } from './entities/booking-request.entity.js';
 
+import type { Paginated } from '../common/pagination/paginate.js';
 import type { User } from '../users/entities/user.entity.js';
 import type {
   BookingRequestResponse,
   CreateBookingRequestBody,
+  ListOwnBookingRequestsQuery,
 } from './schemas/booking-request.schema.js';
+import type { FindOptionsSelect } from 'typeorm';
+
+// Exactly the columns `toBookingRequestResponse` reads.
+const bookingRequestResponseColumns: FindOptionsSelect<BookingRequest> = {
+  id: true,
+  roomsRequested: true,
+  checkInDate: true,
+  checkOutDate: true,
+  totalAmount: true,
+  status: true,
+  expiresAt: true,
+  createdAt: true,
+  roomType: { id: true, name: true },
+};
 
 @Injectable()
 export class BookingRequestsService {
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    @InjectRepository(BookingRequest)
+    private readonly bookingRequestsRepository: Repository<BookingRequest>,
+  ) {}
+
+  async listOwn(
+    user: User,
+    query: ListOwnBookingRequestsQuery,
+  ): Promise<Paginated<BookingRequestResponse>> {
+    const { status, roomTypeId } = query;
+    const [rows, total] = await this.bookingRequestsRepository.findAndCount({
+      select: bookingRequestResponseColumns,
+      where: {
+        ...(status && { status }),
+        ...(roomTypeId && { roomTypeId: String(roomTypeId) }),
+        userId: user.id,
+      },
+      relations: { roomType: true },
+      order: { createdAt: 'DESC', id: 'DESC' },
+      ...toSkipTake(query),
+    });
+    return paginate(
+      rows.map((row) => toBookingRequestResponse(row, row.roomType)),
+      total,
+      query,
+    );
+  }
+
+  // Someone else's request is a 404, not a 403: its existence stays private.
+  async findOwn(user: User, id: number): Promise<BookingRequestResponse> {
+    const bookingRequest = await this.bookingRequestsRepository.findOne({
+      select: bookingRequestResponseColumns,
+      where: { id: String(id), userId: user.id },
+      relations: { roomType: true },
+    });
+    if (!bookingRequest) {
+      throw new NotFoundException('Booking request not found');
+    }
+    return toBookingRequestResponse(bookingRequest, bookingRequest.roomType);
+  }
 
   async create(
     user: User,
