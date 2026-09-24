@@ -79,7 +79,7 @@
 
 | No  | F-ID                | Method | Path                                 | Role        | Request                                                              | Response               | Note                                                                                     |
 | --- | ------------------- | ------ | ------------------------------------ | ----------- | -------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
-| 1   | F-001               | POST   | `/auth/register`                     | Visitor     | body: email, password, fullName                                      | User (unverified)      | 409 email trùng; phát job mail kích hoạt                                                 |
+| 1   | F-001               | POST   | `/auth/register`                     | Visitor     | body: email, password, fullName                                      | User (unverified)      | 409 email trùng; phát job mail kích hoạt, viết theo header `Accept-Language` (`vi` / `en`, mặc định `vi`) |
 | 2   | F-016               | GET    | `/auth/activate`                     | Visitor     | query: token                                                         | User (active)          | GET vì là link trong mail; 404 / 409 hết hạn. Token 32 byte ngẫu nhiên, lưu sha256 hex ở `token_hash`, TTL 24h; link `{APP_BASE_URL}/api/auth/activate?token=` (không có frontend nên trỏ thẳng vào API) |
 | 3   | F-002               | POST   | `/auth/login`                        | Visitor     | body: email, password                                                | Auth                   | 401 sai; 403 chưa kích hoạt / bị khoá                                                    |
 | 4   | F-002               | POST   | `/auth/logout`                       | User, Admin | —                                                                    | —                      | Stateless; client bỏ token                                                               |
@@ -118,7 +118,7 @@
 | F-ID      | Trigger                                      | Việc                                                                                                                  |
 | --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | F-015     | Sau commit approval / rejection / expiration | Job `booking-request.notify` (BullMQ) → mail cho user, rejection kèm lý do                                            |
-| F-016     | Sau register                                 | Job `user.activation` → mail kèm link `/auth/activate?token=`                                                         |
+| F-016     | Sau register                                 | Job `user.activation` → mail kèm link `/auth/activate?token=`, ngôn ngữ lấy từ request đăng ký |
 | F-008 E-4 | Cron mỗi 30 phút                             | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail. Kiểm tra chỗ trống đã bỏ qua hold quá hạn ngay lập tức, nên cron chỉ đồng bộ `status`; duyệt (F-011) phải tự kiểm tra `expiresAt`; từ chối và huỷ thì không |
 | F-020     | Cron 23:59 ngày cuối tháng                   | Tổng hợp doanh thu tháng (cùng service với No 30) → mail cho mọi admin                                                |
 
