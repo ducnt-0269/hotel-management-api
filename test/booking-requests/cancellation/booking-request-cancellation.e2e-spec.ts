@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { HOTEL_TIME_ZONE } from '../../../src/booking-requests/booking-request.constants.js';
 import { BookingRequestCancellation } from '../../../src/booking-requests/cancellation/entities/booking-request-cancellation.entity.js';
 import { BookingRequest } from '../../../src/booking-requests/entities/booking-request.entity.js';
+import { BookingRequestExpirationService } from '../../../src/booking-requests/expiration/booking-request-expiration.service.js';
 import { signIn } from '../../support/auth.js';
 import { createTestApp } from '../../support/create-test-app.js';
 import { createBookingRequest } from '../../support/factories/booking-request.factory.js';
@@ -100,15 +101,16 @@ describe('booking request cancellation (e2e)', () => {
     await raise().expect(201);
   });
 
-  it('refuses an overdue hold the sweep has not recorded yet', async () => {
+  it('cancels an overdue hold the sweep has not reached, which then skips it', async () => {
     const bookingRequest = await book(guest, {
       expiresAt: new Date(Date.now() - 60_000),
     });
 
-    const res = await cancel(bookingRequest.id).expect(409);
+    await cancel(bookingRequest.id).expect(201);
 
-    expect(res.body.message).toBe('Booking request is not pending');
-    expect(await cancellations().count()).toBe(0);
+    expect(await app.get(BookingRequestExpirationService).expireOverdue()).toBe(
+      0,
+    );
   });
 
   it.each<BookingRequestStatus>([
@@ -133,6 +135,32 @@ describe('booking request cancellation (e2e)', () => {
     expect(
       await cancellations().countBy({ bookingRequestId: bookingRequest.id }),
     ).toBe(1);
+  });
+
+  it('does not overwrite a sweep that expires the request mid-cancel', async () => {
+    const bookingRequest = await book(guest);
+    // Plays the expiry sweep: locks the row and expires it, not yet committed.
+    const sweep = app.get(DataSource).createQueryRunner();
+    await sweep.startTransaction();
+    await sweep.query(
+      `SELECT id FROM booking_requests WHERE id = $1 FOR UPDATE`,
+      [bookingRequest.id],
+    );
+    await sweep.query(
+      `UPDATE booking_requests SET status = 'expired' WHERE id = $1`,
+      [bookingRequest.id],
+    );
+
+    // supertest sends lazily; `.then` fires the request now.
+    const pending = cancel(bookingRequest.id).then((res) => res);
+    // Long enough for the cancel's UPDATE to reach the row and wait on it.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await sweep.commitTransaction();
+    await sweep.release();
+
+    const res = await pending;
+    expect(res.status).toBe(409);
+    expect(await cancellations().count()).toBe(0);
   });
 
   it('hides another guest’s request behind a 404', async () => {
