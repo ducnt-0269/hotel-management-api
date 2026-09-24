@@ -20,6 +20,7 @@
 | Tiền                                    | số nguyên VND                                                                                                            |
 | ID                                      | số nguyên                                                                                                                |
 | Pagination                              | `?page=1&perPage=20` (tối đa 100) → `{ "data": [...], "meta": { "total", "page", "perPage" } }`                          |
+| Lọc list                                | Tên field (`status`, `roomTypeId`…) = khớp đúng giá trị. `q` = tìm tự do, chứa chuỗi, không phân biệt hoa thường, trên nhiều field (liệt kê ở từng API) |
 | Object đơn                              | Trả thẳng, không bọc                                                                                                     |
 | Không có gì để trả                      | Body rỗng (logout, đổi mật khẩu, delete)                                                                                 |
 | Tạo sub-resource (approval, rejection…) | `POST` → 201, body = bản ghi vừa tạo                                                                                     |
@@ -121,6 +122,7 @@
 | 1   | ~~`POST /auth/register` trả User hay 201 rỗng?~~ **Đã chốt 2026-09-22**: trả User (`status: unverified`) |
 | 2   | Có cần `GET /booking-requests/:id/timeline` gộp 4 outcome? Hiện `status` + `rejectionReason` đủ cho F-009 |
 | 3   | Rate limit `/auth/*` (`@nestjs/throttler`) — không phải must, thêm nếu còn thời gian                      |
+| 4   | Khoá user (No 27) thì request `pending` của họ ra sao? **Đã chốt 2026-09-23**: không đụng tới — admin vẫn duyệt/từ chối, hoặc để tự hết hạn |
 
 ## 6. Deviations
 
