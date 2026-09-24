@@ -22,8 +22,7 @@ import type {
   ListOwnBookingRequestsQuery,
 } from './schemas/booking-request.schema.js';
 
-// Guests raise and follow their own requests; admins decide on them under
-// /admin/booking-requests, never raise them.
+// Guests raise requests; admins decide on them, never raise them.
 @ApiBearerAuth()
 @Roles('user')
 @ApiErrorResponse(403, 'Forbidden')
