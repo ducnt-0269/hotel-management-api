@@ -12,7 +12,6 @@ export function toRoomTypeResponse(roomType: RoomType): RoomTypeResponse {
     name: roomType.name,
     description: roomType.description,
     pricePerNight: Number(roomType.pricePerNight),
-    totalRooms: roomType.totalRooms,
     amenities: roomType.amenityLinks
       .map(({ amenity }) => toAmenityResponse(amenity))
       .sort((a, b) => a.code.localeCompare(b.code)),

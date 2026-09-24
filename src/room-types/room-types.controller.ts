@@ -27,7 +27,8 @@ export class RoomTypesController {
   @Get()
   @RespondsWith(roomTypeListResponseSchema, {
     status: 200,
-    description: 'Room types on sale',
+    description:
+      'Room types with at least `rooms` rooms free on every night of the stay',
   })
   list(
     @Query({ schema: listRoomTypesQuerySchema }) query: ListRoomTypesQuery,

@@ -1,10 +1,20 @@
+import { DateTime } from 'luxon';
 import request from 'supertest';
 
+import { HOTEL_TIME_ZONE } from '../../src/booking-requests/booking-request.constants.js';
 import { createTestApp } from '../support/create-test-app.js';
 import { createRoomType } from '../support/factories/room-type.factory.js';
 import { resetDb } from '../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
+
+// Every list call names a stay; far enough out that no fixture hold overlaps.
+const day = (offset: number) =>
+  DateTime.now()
+    .setZone(HOTEL_TIME_ZONE)
+    .plus({ days: offset })
+    .toFormat('yyyy-MM-dd');
+const stay = `checkInDate=${day(10)}&checkOutDate=${day(13)}`;
 
 // No `Authorization` header appears in this file: both routes are public, so
 // every case doubles as proof of that.
@@ -26,7 +36,7 @@ describe('room types (e2e)', () => {
 
   describe('GET /api/room-types', () => {
     it('serves an empty catalogue', async () => {
-      const { body } = await get('/api/room-types').expect(200);
+      const { body } = await get(`/api/room-types?${stay}`).expect(200);
 
       expect(body).toEqual({
         data: [],
@@ -43,7 +53,7 @@ describe('room types (e2e)', () => {
         amenities: ['wifi', 'bed_king', 'view_sea'],
       });
 
-      const { body } = await get('/api/room-types').expect(200);
+      const { body } = await get(`/api/room-types?${stay}`).expect(200);
 
       expect(body.data).toEqual([
         {
@@ -51,7 +61,6 @@ describe('room types (e2e)', () => {
           name: 'Deluxe Sea View',
           description: 'Phòng 35m² giường king, ban công hướng biển.',
           pricePerNight: 2_200_000,
-          totalRooms: 4,
           // Alphabetical by code, not the order they were linked in.
           amenities: [
             { id: expect.any(Number), code: 'bed_king' },
@@ -69,7 +78,7 @@ describe('room types (e2e)', () => {
       await createRoomType(app, { name: 'Second' });
       await createRoomType(app, { name: 'Third' });
 
-      const { body } = await get('/api/room-types').expect(200);
+      const { body } = await get(`/api/room-types?${stay}`).expect(200);
 
       const ids: number[] = body.data.map(
         (roomType: { id: number }) => roomType.id,
@@ -84,9 +93,9 @@ describe('room types (e2e)', () => {
       await createRoomType(app, { name: 'Second' });
       await createRoomType(app, { name: 'Third' });
 
-      const { body } = await get('/api/room-types?page=2&perPage=2').expect(
-        200,
-      );
+      const { body } = await get(
+        `/api/room-types?${stay}&page=2&perPage=2`,
+      ).expect(200);
 
       expect(names(body)).toEqual(['Third']);
       expect(body.meta).toEqual({ total: 3, page: 2, perPage: 2 });
@@ -95,7 +104,7 @@ describe('room types (e2e)', () => {
     it('returns an empty page past the end rather than an error', async () => {
       await createRoomType(app);
 
-      const { body } = await get('/api/room-types?page=99').expect(200);
+      const { body } = await get(`/api/room-types?${stay}&page=99`).expect(200);
 
       expect(body.data).toEqual([]);
       expect(body.meta.total).toBe(1);
@@ -104,7 +113,7 @@ describe('room types (e2e)', () => {
     it.each(['perPage=101', 'perPage=0', 'page=0', 'page=abc'])(
       'rejects ?%s',
       async (query) => {
-        await get(`/api/room-types?${query}`).expect(400);
+        await get(`/api/room-types?${stay}&${query}`).expect(400);
       },
     );
   });
@@ -126,7 +135,6 @@ describe('room types (e2e)', () => {
         name: 'Standard Twin',
         description: 'Phòng 22m² với hai giường đơn.',
         pricePerNight: 850_000,
-        totalRooms: 10,
         amenities: [
           { id: expect.any(Number), code: 'tv' },
           { id: expect.any(Number), code: 'wifi' },

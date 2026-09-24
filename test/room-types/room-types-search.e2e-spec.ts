@@ -1,10 +1,20 @@
+import { DateTime } from 'luxon';
 import request from 'supertest';
 
+import { HOTEL_TIME_ZONE } from '../../src/booking-requests/booking-request.constants.js';
 import { createTestApp } from '../support/create-test-app.js';
 import { createRoomType } from '../support/factories/room-type.factory.js';
 import { resetDb } from '../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
+
+// Every list call names a stay; far enough out that no fixture hold overlaps.
+const day = (offset: number) =>
+  DateTime.now()
+    .setZone(HOTEL_TIME_ZONE)
+    .plus({ days: offset })
+    .toFormat('yyyy-MM-dd');
+const stay = `checkInDate=${day(10)}&checkOutDate=${day(13)}`;
 
 // Every filter on the room type list, and the combinations between them. Split
 // from room-types.e2e-spec.ts to keep both files under the size ceiling — by
@@ -38,7 +48,7 @@ describe('room type search (e2e)', () => {
     await seedTwo();
 
     const { body } = await get(
-      '/api/room-types?amenities=wifi&amenities=tv',
+      `/api/room-types?${stay}&amenities=wifi&amenities=tv`,
     ).expect(200);
 
     expect(names(body)).toEqual(['Suite']);
@@ -48,7 +58,7 @@ describe('room type search (e2e)', () => {
     await seedTwo();
 
     const { body } = await get(
-      '/api/room-types?amenities=wifi&amenities=bathtub',
+      `/api/room-types?${stay}&amenities=wifi&amenities=bathtub`,
     ).expect(200);
 
     expect(body).toEqual({
@@ -60,7 +70,9 @@ describe('room type search (e2e)', () => {
   it('accepts the single-value form', async () => {
     await seedTwo();
 
-    const { body } = await get('/api/room-types?amenities=wifi').expect(200);
+    const { body } = await get(`/api/room-types?${stay}&amenities=wifi`).expect(
+      200,
+    );
 
     expect(names(body)).toEqual(['Suite', 'Economy']);
   });
@@ -69,7 +81,7 @@ describe('room type search (e2e)', () => {
     await seedTwo();
 
     const { body } = await get(
-      '/api/room-types?amenities=wifi&amenities=wifi',
+      `/api/room-types?${stay}&amenities=wifi&amenities=wifi`,
     ).expect(200);
 
     expect(names(body)).toEqual(['Suite', 'Economy']);
@@ -78,7 +90,9 @@ describe('room type search (e2e)', () => {
   it('returns an empty page for a code the catalogue does not hold', async () => {
     await seedTwo();
 
-    const { body } = await get('/api/room-types?amenities=jacuzzi').expect(200);
+    const { body } = await get(
+      `/api/room-types?${stay}&amenities=jacuzzi`,
+    ).expect(200);
 
     expect(body).toEqual({
       data: [],
@@ -89,7 +103,9 @@ describe('room type search (e2e)', () => {
   it('treats an empty value as no filter', async () => {
     await seedTwo();
 
-    const { body } = await get('/api/room-types?amenities=').expect(200);
+    const { body } = await get(`/api/room-types?${stay}&amenities=`).expect(
+      200,
+    );
 
     expect(names(body)).toEqual(['Suite', 'Economy']);
   });
@@ -97,7 +113,9 @@ describe('room type search (e2e)', () => {
   it('does not truncate a matched room type to the codes filtered on', async () => {
     await seedTwo();
 
-    const { body } = await get('/api/room-types?amenities=wifi').expect(200);
+    const { body } = await get(`/api/room-types?${stay}&amenities=wifi`).expect(
+      200,
+    );
 
     expect(body.data[0].amenities).toEqual([
       { id: expect.any(Number), code: 'balcony' },
@@ -111,11 +129,11 @@ describe('room type search (e2e)', () => {
     await createRoomType(app, { name: 'B', amenities: ['wifi'] });
     await createRoomType(app, { name: 'C', amenities: ['wifi'] });
 
-    const first = await get('/api/room-types?amenities=wifi&perPage=2').expect(
-      200,
-    );
+    const first = await get(
+      `/api/room-types?${stay}&amenities=wifi&perPage=2`,
+    ).expect(200);
     const second = await get(
-      '/api/room-types?amenities=wifi&page=2&perPage=2',
+      `/api/room-types?${stay}&amenities=wifi&page=2&perPage=2`,
     ).expect(200);
 
     expect(names(first.body)).toEqual(['A', 'B']);
