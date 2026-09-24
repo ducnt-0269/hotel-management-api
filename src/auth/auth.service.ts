@@ -31,7 +31,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(body: RegisterBody): Promise<UserResponse> {
+  async register(body: RegisterBody, lang: string): Promise<UserResponse> {
     const { user, rawToken } = await this.dataSource.transaction(
       async (manager) => {
         const user = await this.usersService.createUnverified(manager, body);
@@ -46,7 +46,7 @@ export class AuthService {
     );
 
     // Enqueued after the commit so a rolled-back registration never mails.
-    await this.mailService.enqueueActivationEmail(user, rawToken);
+    await this.mailService.enqueueActivationEmail(user, rawToken, lang);
     return toUserResponse(user);
   }
 

@@ -2,9 +2,11 @@
   Shared MJML shell for every mail: preheader, brand bar, white card, footer.
   `{{{body}}}` is the rendered template, injected by the mailer's `layout`
   option. MJML compiles the result to the table markup Outlook needs, and
-  Handlebars escapes every {{value}} on the way in.
+  Handlebars escapes every {{value}} on the way in. Static copy comes from
+  src/i18n/<lang>/mail.json through the `t` helper, in the language the
+  context's `i18nLang` names.
 --}}
-<mjml>
+<mjml lang='{{i18nLang}}'>
   <mj-head>
     <mj-title>{{subject}}</mj-title>
     <mj-preview>{{preview}}</mj-preview>
@@ -49,8 +51,7 @@
           color='#a1a1aa'
           align='center'
         >
-          Bạn nhận được email này vì địa chỉ của bạn được dùng để đăng ký tài
-          khoản Hotel Management. Nếu không phải bạn, hãy bỏ qua email này.
+          {{t 'mail.layout.footer'}}
         </mj-text>
       </mj-column>
     </mj-section>

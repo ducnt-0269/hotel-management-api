@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { MailerModule, MailerQueueModule } from '@nestjs-modules/mailer';
 import { MjmlAdapter } from '@nestjs-modules/mailer/adapters/mjml.adapter';
 import { Module } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 
 import { EnvService } from '../config/env.service.js';
 import { MailService } from './mail.service.js';
@@ -17,8 +18,8 @@ const here = fileURLToPath(new URL('.', import.meta.url));
   imports: [
     MailerModule.forRootAsync({
       imports: [],
-      inject: [EnvService],
-      useFactory: (envService: EnvService) => ({
+      inject: [EnvService, I18nService],
+      useFactory: (envService: EnvService, i18nService: I18nService) => ({
         transport: {
           host: envService.get('MAIL_HOST'),
           port: envService.get('MAIL_PORT'),
@@ -31,9 +32,16 @@ const here = fileURLToPath(new URL('.', import.meta.url));
         // the Handlebars adapter's own inliner stays off.
         template: {
           dir: join(here, 'templates'),
-          adapter: new MjmlAdapter('handlebars', { inlineCssEnabled: false }),
-          // Handlebars compile options; `strict` turns a missing context
-          // value into an error instead of a blank space in someone's inbox.
+          // `t` reads src/i18n in the language the context's `i18nLang` names.
+          adapter: new MjmlAdapter(
+            'handlebars',
+            { inlineCssEnabled: false },
+            { handlebar: { helper: { t: i18nService.hbsHelper } } },
+          ),
+          // Handlebars compile options for the mail template; `strict` turns
+          // a missing context value into an error instead of a blank space in
+          // someone's inbox. The adapter compiles layout.hbs without them, so
+          // a missing `i18nLang` there falls back to the default language.
           options: { strict: true },
         },
         // Runtime options, read from the top level rather than from
