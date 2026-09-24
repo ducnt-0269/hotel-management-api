@@ -5,8 +5,21 @@ import { HOTEL_TIME_ZONE } from '../../booking-requests/booking-request.constant
 
 import type { BookingRequest } from '../../booking-requests/entities/booking-request.entity.js';
 import type { I18nService } from 'nestjs-i18n';
+import type { FindOptionsSelect } from 'typeorm';
 
-// The columns a booking request mail reads; services select exactly these.
+// The columns a booking request mail reads, for the services that load one;
+// load with `relations: { user: true, roomType: true }`.
+export const BOOKING_REQUEST_MAIL_SELECT = {
+  id: true,
+  roomsRequested: true,
+  checkInDate: true,
+  checkOutDate: true,
+  totalAmount: true,
+  user: { id: true, email: true, fullName: true },
+  roomType: { id: true, name: true },
+} satisfies FindOptionsSelect<BookingRequest>;
+
+// What BOOKING_REQUEST_MAIL_SELECT loads.
 export type BookingRequestMailData = Pick<
   BookingRequest,
   'id' | 'roomsRequested' | 'checkInDate' | 'checkOutDate' | 'totalAmount'

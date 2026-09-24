@@ -4,7 +4,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, In, LessThan } from 'typeorm';
 
 import { MailService } from '../../mail/mail.service.js';
-import { BOOKING_REQUEST_MAIL_SELECT } from '../booking-request-mail-select.js';
+import { BOOKING_REQUEST_MAIL_SELECT } from '../../mail/templates/booking-request-mail-data.js';
 import { BookingRequest } from '../entities/booking-request.entity.js';
 import { BookingRequestExpiration } from './entities/booking-request-expiration.entity.js';
 
