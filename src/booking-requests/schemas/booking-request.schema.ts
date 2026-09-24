@@ -1,6 +1,10 @@
 import { DateTime } from 'luxon';
 import { z } from 'zod';
 
+import {
+  paginatedSchema,
+  paginationQuerySchema,
+} from '../../common/pagination/pagination.schema.js';
 import { stayNights } from '../booking-request-dates.js';
 import {
   HOTEL_TIME_ZONE,
@@ -8,6 +12,28 @@ import {
   MAX_NIGHTS,
   MAX_ROOMS_PER_REQUEST,
 } from '../booking-request.constants.js';
+
+const bookingRequestStatusSchema = z.enum([
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled',
+  'expired',
+]);
+
+// Capped so an absurd id is a 400 here, not a numeric overflow in Postgres.
+const idSchema = z.coerce
+  .number()
+  .int()
+  .positive()
+  .max(Number.MAX_SAFE_INTEGER);
+
+export const bookingRequestIdParamSchema = idSchema;
+
+export const listOwnBookingRequestsQuerySchema = paginationQuerySchema.extend({
+  status: bookingRequestStatusSchema.optional(),
+  roomTypeId: idSchema.optional(),
+});
 
 const timestamp = {
   type: 'string',
@@ -70,13 +96,21 @@ export const bookingRequestResponseSchema = z.object({
   checkOutDate: z.iso.date(),
   nights: z.number().int(),
   totalAmount: z.number().int(),
-  status: z.enum(['pending', 'approved', 'rejected', 'cancelled', 'expired']),
+  status: bookingRequestStatusSchema,
   expiresAt: z.date().meta(timestamp),
   createdAt: z.date().meta(timestamp),
 });
 
+export const bookingRequestListResponseSchema = paginatedSchema(
+  bookingRequestResponseSchema,
+);
+
 export type CreateBookingRequestBody = z.infer<
   typeof createBookingRequestBodySchema
+>;
+
+export type ListOwnBookingRequestsQuery = z.infer<
+  typeof listOwnBookingRequestsQuerySchema
 >;
 
 export type BookingRequestResponse = z.infer<
