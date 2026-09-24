@@ -1,0 +1,37 @@
+{{! The booking request's facts, shared by every outcome mail. }}
+<mj-table
+  font-size='14px'
+  line-height='22px'
+  color='#27272a'
+  cellpadding='6'
+  padding='0 25px 24px'
+>
+  <tr>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.id'}}</td>
+    <td class='summary-value'>#{{id}}</td>
+  </tr>
+  <tr>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.roomType'}}</td>
+    <td class='summary-value'>{{roomTypeName}}</td>
+  </tr>
+  <tr>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.checkIn'}}</td>
+    <td class='summary-value'>{{checkIn}}</td>
+  </tr>
+  <tr>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.checkOut'}}</td>
+    <td class='summary-value'>{{checkOut}}</td>
+  </tr>
+  <tr>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.nights'}}</td>
+    <td class='summary-value'>{{nights}}</td>
+  </tr>
+  <tr>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.rooms'}}</td>
+    <td class='summary-value'>{{rooms}}</td>
+  </tr>
+  <tr class='summary-total'>
+    <td class='summary-label'>{{t 'mail.bookingRequest.summary.total'}}</td>
+    <td class='summary-value'>{{total}}</td>
+  </tr>
+</mj-table>

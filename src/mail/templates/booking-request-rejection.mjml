@@ -1,0 +1,40 @@
+{{> status-pill
+  variant='rejected'
+  label=(t 'mail.bookingRequest.rejection.pill')
+}}
+
+<mj-text
+  font-size="22px"
+  font-weight="700"
+  color="#18181b"
+  padding-bottom="16px"
+>
+  {{t 'mail.bookingRequest.rejection.heading'}}
+</mj-text>
+
+<mj-text
+  padding-bottom="8px"
+  >{{t 'mail.bookingRequest.greeting' this}}</mj-text
+>
+
+<mj-text
+  padding-bottom="24px"
+  >{{t 'mail.bookingRequest.rejection.body' this}}</mj-text
+>
+
+<mj-text padding-bottom="24px">
+  <div class="reason">
+    <div class="reason-label">{{t 'mail.bookingRequest.rejection.reason'}}</div>
+    <div>{{ reason }}</div>
+  </div>
+</mj-text>
+
+{{> booking-request-summary}}
+
+<mj-divider border-width="1px" border-color="#e4e4e7" padding="0 25px 24px" />
+
+<mj-text
+  font-size="13px"
+  color="#71717a"
+  >{{t 'mail.bookingRequest.newRequest'}}</mj-text
+>

@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, LessThan } from 'typeorm';
+import { DataSource, In, LessThan } from 'typeorm';
 
+import { MailService } from '../../mail/mail.service.js';
+import { BOOKING_REQUEST_MAIL_SELECT } from '../booking-request-mail-select.js';
 import { BookingRequest } from '../entities/booking-request.entity.js';
 import { BookingRequestExpiration } from './entities/booking-request-expiration.entity.js';
 
@@ -14,7 +16,10 @@ import { BookingRequestExpiration } from './entities/booking-request-expiration.
 export class BookingRequestExpirationService {
   private readonly logger = new Logger(BookingRequestExpirationService.name);
 
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
+  ) {}
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   async sweep(): Promise<void> {
@@ -31,7 +36,7 @@ export class BookingRequestExpirationService {
   // the UNIQUE on booking_request_expirations. One transaction: status never
   // moves without its outcome row.
   async expireOverdue(): Promise<number> {
-    return this.dataSource.transaction(async (manager) => {
+    const ids = await this.dataSource.transaction(async (manager) => {
       const { raw } = await manager
         .createQueryBuilder()
         .update(BookingRequest)
@@ -48,7 +53,35 @@ export class BookingRequestExpirationService {
           ids.map((bookingRequestId) => ({ bookingRequestId })),
         );
       }
-      return ids.length;
+      return ids;
     });
+
+    // Mailed after the commit so a rolled-back sweep never mails.
+    await this.mailExpired(ids);
+    return ids.length;
+  }
+
+  // The rows are already expired and no sweep will see them again, so one
+  // failed enqueue must not cost the rest of the batch its mail.
+  private async mailExpired(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+
+    const expired = await this.dataSource.getRepository(BookingRequest).find({
+      select: BOOKING_REQUEST_MAIL_SELECT,
+      relations: { user: true, roomType: true },
+      where: { id: In(ids) },
+    });
+    for (const bookingRequest of expired) {
+      try {
+        await this.mailService.enqueueBookingRequestExpirationEmail(
+          bookingRequest,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Expiry mail for booking request #${bookingRequest.id} failed`,
+          error,
+        );
+      }
+    }
   }
 }

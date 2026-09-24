@@ -12,5 +12,39 @@
     "fallback": "Button not working? Paste this link into your browser:",
     "textBody": "Your account has been created. Open the link below to activate it:",
     "expiry": "The link expires in {expiryHours} hours."
+  },
+  "bookingRequest": {
+    "subject": "Booking request #{id} {status}",
+    "greeting": "Hi {fullName},",
+    "summary": {
+      "id": "Request",
+      "roomType": "Room type",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "nights": "Nights",
+      "rooms": "Rooms",
+      "total": "Total"
+    },
+    "newRequest": "You can send a new request for other dates.",
+    "approval": {
+      "status": "approved",
+      "pill": "Approved",
+      "heading": "Your booking request is approved",
+      "body": "The hotel has approved your request and is holding {rooms} {roomTypeName} room(s) for the stay below.",
+      "closing": "We look forward to seeing you on check-in day."
+    },
+    "rejection": {
+      "status": "declined",
+      "pill": "Declined",
+      "heading": "Your booking request was declined",
+      "body": "Sorry, the hotel cannot accept the booking request below.",
+      "reason": "Reason"
+    },
+    "expiration": {
+      "status": "expired",
+      "pill": "Expired",
+      "heading": "Your booking request has expired",
+      "body": "The request below was not handled before its hold ran out, so it has expired and the rooms have been released."
+    }
   }
 }

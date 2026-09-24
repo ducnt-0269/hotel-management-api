@@ -2,10 +2,15 @@ import { MailerQueueService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 
+import { DEFAULT_LANGUAGE } from '../common/i18n/default-language.js';
 import { EnvService } from '../config/env.service.js';
 import { activationEmail } from './templates/activation-email.js';
+import { bookingRequestApprovalEmail } from './templates/booking-request-approval-email.js';
+import { bookingRequestExpirationEmail } from './templates/booking-request-expiration-email.js';
+import { bookingRequestRejectionEmail } from './templates/booking-request-rejection-email.js';
 
 import type { User } from '../users/entities/user.entity.js';
+import type { BookingRequestMailData } from './templates/booking-request-mail-data.js';
 
 @Injectable()
 export class MailService {
@@ -25,6 +30,44 @@ export class MailService {
     await this.mailerQueueService.enqueue({
       to: user.email,
       ...activationEmail(this.i18nService, lang, user, url),
+    });
+  }
+
+  // Sent with no request from the guest to take a language from.
+  async enqueueBookingRequestApprovalEmail(
+    data: BookingRequestMailData,
+  ): Promise<void> {
+    await this.mailerQueueService.enqueue({
+      to: data.user.email,
+      ...bookingRequestApprovalEmail(this.i18nService, DEFAULT_LANGUAGE, data),
+    });
+  }
+
+  async enqueueBookingRequestRejectionEmail(
+    data: BookingRequestMailData,
+    reason: string,
+  ): Promise<void> {
+    await this.mailerQueueService.enqueue({
+      to: data.user.email,
+      ...bookingRequestRejectionEmail(
+        this.i18nService,
+        DEFAULT_LANGUAGE,
+        data,
+        reason,
+      ),
+    });
+  }
+
+  async enqueueBookingRequestExpirationEmail(
+    data: BookingRequestMailData,
+  ): Promise<void> {
+    await this.mailerQueueService.enqueue({
+      to: data.user.email,
+      ...bookingRequestExpirationEmail(
+        this.i18nService,
+        DEFAULT_LANGUAGE,
+        data,
+      ),
     });
   }
 }
