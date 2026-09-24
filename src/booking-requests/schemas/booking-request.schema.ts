@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { stayNights } from '../booking-request-dates.js';
 import {
+  BOOKING_REQUEST_STATUSES,
   HOTEL_TIME_ZONE,
   MAX_MONTHS_AHEAD,
   MAX_NIGHTS,
@@ -70,7 +71,7 @@ export const bookingRequestResponseSchema = z.object({
   checkOutDate: z.iso.date(),
   nights: z.number().int(),
   totalAmount: z.number().int(),
-  status: z.enum(['pending', 'approved', 'rejected', 'cancelled', 'expired']),
+  status: z.enum(BOOKING_REQUEST_STATUSES),
   expiresAt: z.date().meta(timestamp),
   createdAt: z.date().meta(timestamp),
 });

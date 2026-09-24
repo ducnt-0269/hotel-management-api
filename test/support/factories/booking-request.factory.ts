@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { HOLD_HOURS } from '../../../src/booking-requests/booking-request.constants.js';
 import { BookingRequest } from '../../../src/booking-requests/entities/booking-request.entity.js';
 
-import type { BookingRequestStatus } from '../../../src/booking-requests/entities/booking-request.entity.js';
+import type { BookingRequestStatus } from '../../../src/booking-requests/booking-request.constants.js';
 import type { RoomType } from '../../../src/room-types/entities/room-type.entity.js';
 import type { User } from '../../../src/users/entities/user.entity.js';
 import type { INestApplication } from '@nestjs/common';

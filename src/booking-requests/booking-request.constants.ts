@@ -9,3 +9,12 @@ export const HOLD_HOURS = 24;
 
 // Every business date (check-in, "today", hold expiry) is a hotel-local date.
 export const HOTEL_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+export const BOOKING_REQUEST_STATUSES = [
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled',
+  'expired',
+] as const;
+export type BookingRequestStatus = (typeof BOOKING_REQUEST_STATUSES)[number];
