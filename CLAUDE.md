@@ -123,9 +123,13 @@ Never write code that updates `status` without inserting the matching outcome ro
 ## API conventions
 
 - Base path `/api`; JSON keys camelCase (DB is snake_case); dates `YYYY-MM-DD`, timestamps ISO 8601 UTC; money is integer VND.
-- No `/admin` prefix: one resource path, guards per method, list scope by role (user sees own, admin sees all).
-- State transitions are noun sub-resources mirroring the outcome tables:
-  `POST /booking-requests/:id/approval | rejection | cancellation`, `POST /users/:id/deactivation | reactivation`.
+- Admin-only routes live under `/admin/<resource>` in their own `Admin<Resource>Controller`
+  (`admin-<resource>.controller.ts`, class-level `@Roles('admin')`) inside the resource's module. User and
+  public routes keep `/<resource>`; a user list is scoped to the caller. One response shape per route —
+  no role-dependent fields, no role branching in services.
+- State transitions are noun sub-resources mirroring the outcome tables, under whichever prefix owns them:
+  `POST /booking-requests/:id/cancellation`, `POST /admin/booking-requests/:id/approval | rejection`,
+  `POST /admin/users/:id/deactivation | reactivation`.
 - Lists: `?page&perPage` → `{ data, meta: { total, page, perPage } }`. Single objects are returned unwrapped.
 
 ## Documenting an endpoint

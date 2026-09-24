@@ -25,8 +25,8 @@ import type {
 @ApiBearerAuth()
 @Roles('admin')
 @ApiErrorResponse(403, 'Forbidden')
-@Controller('users')
-export class UsersController {
+@Controller('admin/users')
+export class AdminUsersController {
   constructor(private readonly userManagementService: UserManagementService) {}
 
   @Get()
