@@ -6,6 +6,11 @@ import { BookingRequest } from './entities/booking-request.entity.js';
 import type { RoomType } from '../room-types/entities/room-type.entity.js';
 import type { EntityManager } from 'typeorm';
 
+type Hold = Pick<
+  BookingRequest,
+  'checkInDate' | 'checkOutDate' | 'roomsRequested'
+>;
+
 // Rooms still free on each night of the stay. Pass the caller's transaction
 // manager to read behind its locks, or `dataSource.manager` for a plain read.
 export async function availableRoomsPerNight(
@@ -21,10 +26,13 @@ export async function availableRoomsPerNight(
     checkInDate: LessThan(checkOutDate),
     checkOutDate: MoreThan(checkInDate),
   };
-  const holds = await manager.findBy(BookingRequest, [
-    { ...overlapsStay, status: 'approved' },
-    { ...overlapsStay, status: 'pending', expiresAt: MoreThan(new Date()) },
-  ]);
+  const holds: Hold[] = await manager.find(BookingRequest, {
+    select: { checkInDate: true, checkOutDate: true, roomsRequested: true },
+    where: [
+      { ...overlapsStay, status: 'approved' },
+      { ...overlapsStay, status: 'pending', expiresAt: MoreThan(new Date()) },
+    ],
+  });
 
   return stayNightDates(checkInDate, checkOutDate).map((night) => ({
     night,
@@ -32,13 +40,13 @@ export async function availableRoomsPerNight(
   }));
 }
 
-function roomsHeldOn(night: string, holds: BookingRequest[]): number {
+function roomsHeldOn(night: string, holds: Hold[]): number {
   return holds
     .filter((hold) => coversNight(hold, night))
     .reduce((sum, hold) => sum + hold.roomsRequested, 0);
 }
 
 // The check-out day is not a night of the stay.
-function coversNight(hold: BookingRequest, night: string): boolean {
+function coversNight(hold: Hold, night: string): boolean {
   return hold.checkInDate <= night && night < hold.checkOutDate;
 }
