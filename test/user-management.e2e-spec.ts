@@ -36,35 +36,38 @@ describe('user management (e2e)', () => {
 
   describe('access', () => {
     it('refuses an anonymous request', async () => {
-      await api().get('/api/users').expect(401);
+      await api().get('/api/admin/users').expect(401);
     });
 
     it('refuses a guest on every route', async () => {
       const guest = await createUser(app);
       const auth = await signIn(app, guest.email, guest.password);
 
-      await api().get('/api/users').set('Authorization', auth).expect(403);
       await api()
-        .get(`/api/users/${guest.id}`)
+        .get('/api/admin/users')
         .set('Authorization', auth)
         .expect(403);
       await api()
-        .post(`/api/users/${admin.id}/deactivation`)
+        .get(`/api/admin/users/${guest.id}`)
         .set('Authorization', auth)
         .expect(403);
       await api()
-        .post(`/api/users/${admin.id}/reactivation`)
+        .post(`/api/admin/users/${admin.id}/deactivation`)
+        .set('Authorization', auth)
+        .expect(403);
+      await api()
+        .post(`/api/admin/users/${admin.id}/reactivation`)
         .set('Authorization', auth)
         .expect(403);
     });
   });
 
-  describe('GET /users', () => {
+  describe('GET /admin/users', () => {
     it('lists every account newest first, without password hashes', async () => {
       const guest = await createUser(app, { status: 'unverified' });
 
       const res = await api()
-        .get('/api/users')
+        .get('/api/admin/users')
         .set('Authorization', adminAuth)
         .expect(200);
 
@@ -88,7 +91,7 @@ describe('user management (e2e)', () => {
       await createUser(app);
 
       const res = await api()
-        .get('/api/users?page=2&perPage=2')
+        .get('/api/admin/users?page=2&perPage=2')
         .set('Authorization', adminAuth)
         .expect(200);
 
@@ -101,7 +104,7 @@ describe('user management (e2e)', () => {
       await createUser(app);
 
       const byStatus = await api()
-        .get('/api/users?status=deactivated')
+        .get('/api/admin/users?status=deactivated')
         .set('Authorization', adminAuth)
         .expect(200);
       expect(byStatus.body.data.map((u: { id: number }) => u.id)).toEqual([
@@ -109,7 +112,7 @@ describe('user management (e2e)', () => {
       ]);
 
       const byRole = await api()
-        .get('/api/users?role=admin')
+        .get('/api/admin/users?role=admin')
         .set('Authorization', adminAuth)
         .expect(200);
       expect(byRole.body.data.map((u: { id: number }) => u.id)).toEqual([
@@ -123,7 +126,7 @@ describe('user management (e2e)', () => {
       await createUser(app, { fullName: 'Trần Thị Bình' });
 
       const res = await api()
-        .get('/api/users?q=NGUYỄN')
+        .get('/api/admin/users?q=NGUYỄN')
         .set('Authorization', adminAuth)
         .expect(200);
       expect(res.body.data.map((u: { id: number }) => u.id)).toEqual([
@@ -131,7 +134,7 @@ describe('user management (e2e)', () => {
       ]);
 
       const email = await api()
-        .get('/api/users?q=nguyen.b')
+        .get('/api/admin/users?q=nguyen.b')
         .set('Authorization', adminAuth)
         .expect(200);
       expect(email.body.data.map((u: { id: number }) => u.id)).toEqual([
@@ -146,7 +149,7 @@ describe('user management (e2e)', () => {
       });
 
       const underscore = await api()
-        .get('/api/users?q=_')
+        .get('/api/admin/users?q=_')
         .set('Authorization', adminAuth)
         .expect(200);
       expect(underscore.body.data.map((u: { id: number }) => u.id)).toEqual([
@@ -154,7 +157,7 @@ describe('user management (e2e)', () => {
       ]);
 
       const percent = await api()
-        .get('/api/users?q=%25')
+        .get('/api/admin/users?q=%25')
         .set('Authorization', adminAuth)
         .expect(200);
       expect(percent.body.meta.total).toBe(0);
@@ -162,18 +165,18 @@ describe('user management (e2e)', () => {
 
     it('rejects an unknown status', async () => {
       await api()
-        .get('/api/users?status=banned')
+        .get('/api/admin/users?status=banned')
         .set('Authorization', adminAuth)
         .expect(400);
     });
   });
 
-  describe('GET /users/:id', () => {
+  describe('GET /admin/users/:id', () => {
     it('returns one account', async () => {
       const guest = await createUser(app);
 
       const res = await api()
-        .get(`/api/users/${guest.id}`)
+        .get(`/api/admin/users/${guest.id}`)
         .set('Authorization', adminAuth)
         .expect(200);
 
@@ -183,19 +186,19 @@ describe('user management (e2e)', () => {
 
     it('answers 404 for an unknown id', async () => {
       await api()
-        .get('/api/users/999999')
+        .get('/api/admin/users/999999')
         .set('Authorization', adminAuth)
         .expect(404);
     });
   });
 
-  describe('POST /users/:id/deactivation', () => {
+  describe('POST /admin/users/:id/deactivation', () => {
     it('records the deactivation and cuts the user off at once', async () => {
       const guest = await createUser(app);
       const guestAuth = await signIn(app, guest.email, guest.password);
 
       const res = await api()
-        .post(`/api/users/${guest.id}/deactivation`)
+        .post(`/api/admin/users/${guest.id}/deactivation`)
         .set('Authorization', adminAuth)
         .expect(201);
 
@@ -219,7 +222,7 @@ describe('user management (e2e)', () => {
 
     it('refuses to deactivate the signed-in admin', async () => {
       await api()
-        .post(`/api/users/${admin.id}/deactivation`)
+        .post(`/api/admin/users/${admin.id}/deactivation`)
         .set('Authorization', adminAuth)
         .expect(409);
     });
@@ -230,7 +233,7 @@ describe('user management (e2e)', () => {
         const guest = await createUser(app, { status });
 
         await api()
-          .post(`/api/users/${guest.id}/deactivation`)
+          .post(`/api/admin/users/${guest.id}/deactivation`)
           .set('Authorization', adminAuth)
           .expect(409);
 
@@ -244,22 +247,22 @@ describe('user management (e2e)', () => {
 
     it('answers 404 for an unknown id', async () => {
       await api()
-        .post('/api/users/999999/deactivation')
+        .post('/api/admin/users/999999/deactivation')
         .set('Authorization', adminAuth)
         .expect(404);
     });
   });
 
-  describe('POST /users/:id/reactivation', () => {
+  describe('POST /admin/users/:id/reactivation', () => {
     it('restores access, and the account can be switched off again', async () => {
       const guest = await createUser(app);
       await api()
-        .post(`/api/users/${guest.id}/deactivation`)
+        .post(`/api/admin/users/${guest.id}/deactivation`)
         .set('Authorization', adminAuth)
         .expect(201);
 
       const res = await api()
-        .post(`/api/users/${guest.id}/reactivation`)
+        .post(`/api/admin/users/${guest.id}/reactivation`)
         .set('Authorization', adminAuth)
         .expect(201);
 
@@ -271,7 +274,7 @@ describe('user management (e2e)', () => {
       await signIn(app, guest.email, guest.password);
 
       await api()
-        .post(`/api/users/${guest.id}/deactivation`)
+        .post(`/api/admin/users/${guest.id}/deactivation`)
         .set('Authorization', adminAuth)
         .expect(201);
       const reactivations = await app
@@ -285,14 +288,14 @@ describe('user management (e2e)', () => {
       const guest = await createUser(app);
 
       await api()
-        .post(`/api/users/${guest.id}/reactivation`)
+        .post(`/api/admin/users/${guest.id}/reactivation`)
         .set('Authorization', adminAuth)
         .expect(409);
     });
 
     it('answers 404 for an unknown id', async () => {
       await api()
-        .post('/api/users/999999/reactivation')
+        .post('/api/admin/users/999999/reactivation')
         .set('Authorization', adminAuth)
         .expect(404);
     });
