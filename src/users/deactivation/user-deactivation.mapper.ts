@@ -1,5 +1,5 @@
-import type { UserDeactivation } from './user-deactivation.entity.js';
-import type { UserDeactivationResponse } from './user-deactivation.schema.js';
+import type { UserDeactivation } from './entities/user-deactivation.entity.js';
+import type { UserDeactivationResponse } from './schemas/user-deactivation.schema.js';
 
 export function toUserDeactivationResponse(
   deactivation: UserDeactivation,

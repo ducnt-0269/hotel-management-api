@@ -4,8 +4,8 @@ import { DataSource } from 'typeorm';
 
 import { HOTEL_TIME_ZONE } from '../../../src/booking-requests/booking-request.constants.js';
 import { BookingRequest } from '../../../src/booking-requests/entities/booking-request.entity.js';
-import { BookingRequestExpiration } from '../../../src/booking-requests/expiration/booking-request-expiration.entity.js';
 import { BookingRequestExpirationService } from '../../../src/booking-requests/expiration/booking-request-expiration.service.js';
+import { BookingRequestExpiration } from '../../../src/booking-requests/expiration/entities/booking-request-expiration.entity.js';
 import { signIn } from '../../support/auth.js';
 import { createTestApp } from '../../support/create-test-app.js';
 import { createBookingRequest } from '../../support/factories/booking-request.factory.js';

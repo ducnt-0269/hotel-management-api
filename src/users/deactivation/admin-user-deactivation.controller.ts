@@ -7,10 +7,10 @@ import { ApiErrorResponse } from '../../common/api-docs/api-error-response.decor
 import { RespondsWith } from '../../common/api-docs/responds-with.decorator.js';
 import { userIdParamSchema } from '../schemas/user.schema.js';
 import { AdminUserDeactivationService } from './admin-user-deactivation.service.js';
-import { userDeactivationResponseSchema } from './user-deactivation.schema.js';
+import { userDeactivationResponseSchema } from './schemas/user-deactivation.schema.js';
 
 import type { User } from '../entities/user.entity.js';
-import type { UserDeactivationResponse } from './user-deactivation.schema.js';
+import type { UserDeactivationResponse } from './schemas/user-deactivation.schema.js';
 
 @ApiBearerAuth()
 @Roles('admin')

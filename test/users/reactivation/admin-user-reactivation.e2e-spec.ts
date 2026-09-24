@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { UserReactivation } from '../../../src/users/reactivation/user-reactivation.entity.js';
+import { UserReactivation } from '../../../src/users/reactivation/entities/user-reactivation.entity.js';
 import { signIn } from '../../support/auth.js';
 import { createTestApp } from '../../support/create-test-app.js';
 import { createUser } from '../../support/factories/user.factory.js';

@@ -7,10 +7,10 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
 import { User } from '../entities/user.entity.js';
-import { UserReactivation } from './user-reactivation.entity.js';
+import { UserReactivation } from './entities/user-reactivation.entity.js';
 import { toUserReactivationResponse } from './user-reactivation.mapper.js';
 
-import type { UserReactivationResponse } from './user-reactivation.schema.js';
+import type { UserReactivationResponse } from './schemas/user-reactivation.schema.js';
 
 // An admin switches a deactivated account back on.
 @Injectable()

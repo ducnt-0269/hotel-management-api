@@ -51,14 +51,16 @@ lives in `src/auth/`, not `src/users/`. Injected properties are named after thei
 `authService`, `usersRepository`, `envService`.
 
 - **Slices.** The module root holds the resource itself, sorted by kind. Each lifecycle transition
-  that writes an outcome table gets a subfolder, files flat inside with full names kept, and owns its
-  controller, pathed at the sub-resource: `users/deactivation/`
+  that writes an outcome table gets a subfolder shaped like the module root (controller, service,
+  mapper flat; `entities/` and `schemas/` as folders; full file names kept) and owns its controller,
+  pathed at the sub-resource: `users/deactivation/`
   (`@Controller('admin/users/:id/deactivation')`), `booking-requests/expiration/` (a cron, so no
   controller). One transition, one slice — even when two look alike today (deactivation and
   reactivation are two slices): the likeness is incidental, and the two change for different reasons.
   Knowledge that is truly shared (a guard both transitions must apply) goes in one function at the
   module root that both slices call. An outcome written as one step of a larger flow (email
-  verification) stays in that flow. No `index.ts` barrels, no deeper nesting.
+  verification) stays in that flow. A slice is not a Nest module — the parent module registers it.
+  No `index.ts` barrels, no slice inside a slice.
 - **`admin-` prefix.** An admin route's controller and service always carry it
   (`admin-users.controller.ts`, `deactivation/admin-user-deactivation.service.ts`); a schema or
   mapper carries it only as the admin variant of a shape the user side also has. Entities never do.

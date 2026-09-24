@@ -4,7 +4,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, LessThan } from 'typeorm';
 
 import { BookingRequest } from '../entities/booking-request.entity.js';
-import { BookingRequestExpiration } from './booking-request-expiration.entity.js';
+import { BookingRequestExpiration } from './entities/booking-request-expiration.entity.js';
 
 // Records the expiry of pending requests nobody decided on in time. Their rooms
 // are already free once `expires_at` passes (the capacity check ignores them),

@@ -1,5 +1,5 @@
-import type { UserReactivation } from './user-reactivation.entity.js';
-import type { UserReactivationResponse } from './user-reactivation.schema.js';
+import type { UserReactivation } from './entities/user-reactivation.entity.js';
+import type { UserReactivationResponse } from './schemas/user-reactivation.schema.js';
 
 export function toUserReactivationResponse(
   reactivation: UserReactivation,
