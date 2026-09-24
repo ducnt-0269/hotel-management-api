@@ -72,6 +72,36 @@ describe('auth (e2e)', () => {
     expect(authorization).toMatch(/^Bearer \S+$/);
   });
 
+  it.each([
+    ['vi', 'Kích hoạt tài khoản Hotel Management'],
+    ['vi-VN,vi;q=0.9,en;q=0.8', 'Kích hoạt tài khoản Hotel Management'],
+    ['en-US', 'Activate your Hotel Management account'],
+  ])(
+    'writes the activation mail in the language the request asks for (%s)',
+    async (acceptLanguage, subject) => {
+      const email = newEmail();
+
+      await register(email).set('Accept-Language', acceptLanguage).expect(201);
+
+      expect((await waitForMail(email)).Subject).toBe(subject);
+    },
+  );
+
+  it.each([['ja'], [undefined]])(
+    'falls back to Vietnamese when the request names no language it has (%s)',
+    async (acceptLanguage) => {
+      const email = newEmail();
+      const req = register(email);
+      if (acceptLanguage) req.set('Accept-Language', acceptLanguage);
+
+      await req.expect(201);
+
+      expect((await waitForMail(email)).Subject).toBe(
+        'Kích hoạt tài khoản Hotel Management',
+      );
+    },
+  );
+
   it('refuses a second registration with the same email, whatever the case', async () => {
     const email = newEmail();
     await register(email).expect(201);
