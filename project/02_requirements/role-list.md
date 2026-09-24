@@ -4,7 +4,7 @@
 
 | ROLE-ID | Role name | Description | Typical user |
 | --- | --- | --- | --- |
-| ROLE-001 | Visitor | Chưa đăng nhập. Xem danh sách và chi tiết loại phòng, tìm loại phòng còn chỗ, tự đăng ký tài khoản. **Không phải một tài khoản**: không bản ghi `users` nào mang role này — nó là trạng thái *chưa xác thực*, trong code thể hiện bằng việc route không gắn guard, không bao giờ bằng một giá trị enum lưu trong DB | Người đang cân nhắc đặt phòng, chưa có tài khoản. Cố ý **không** gọi là "Guest": trong ngôn ngữ khách sạn, guest là khách trả tiền và lưu trú — mà trong hệ thống này luôn là ROLE-002 |
+| ROLE-001 | Visitor | Chưa đăng nhập. Tìm loại phòng còn chỗ cho một kỳ lưu trú, xem chi tiết một loại phòng, tự đăng ký tài khoản. **Không phải một tài khoản**: không bản ghi `users` nào mang role này — nó là trạng thái *chưa xác thực*, trong code thể hiện bằng việc route không gắn guard, không bao giờ bằng một giá trị enum lưu trong DB | Người đang cân nhắc đặt phòng, chưa có tài khoản. Cố ý **không** gọi là "Guest": trong ngôn ngữ khách sạn, guest là khách trả tiền và lưu trú — mà trong hệ thống này luôn là ROLE-002 |
 | ROLE-002 | User | Khách đã đăng ký và đăng nhập. Làm được mọi thứ ROLE-001 làm, cộng thêm: tạo booking request, xem lịch sử request **của chính mình**, và huỷ request khi chưa ai quyết | Khách đặt phòng |
 | ROLE-003 | Admin | Người vận hành khách sạn. Duyệt hoặc từ chối booking request — từ chối bắt buộc kèm lý do — và xem được request của mọi user | Lễ tân / quản lý khách sạn |
 
@@ -19,8 +19,8 @@
 | F-002 | Sign in / sign out | △ | ✅ | ✅ | Visitor thực hiện nửa đăng nhập; đăng xuất thì phải đang có phiên |
 | F-003 | View and edit own profile, change password | — | ✅ | ✅ | Chỉ bản ghi của chính mình |
 | F-004 | Manage users | — | — | ✅ | |
-| F-005 | View room type list and room type detail | ✅ | ✅ | ✅ | Công khai |
-| F-006 | Search available room types by date range and amenity | ✅ | ✅ | △ | Endpoint công khai nên admin gọi được, nhưng không nằm trong luồng nghiệp vụ của admin — họ dùng F-007 |
+| F-005 | View room type list and room type detail | △ | △ | ✅ | Visitor và User chỉ xem chi tiết (công khai); danh sách chỉ cho admin — khách tìm loại phòng qua F-006 |
+| F-006 | Search available room types by date range and amenity | ✅ | ✅ | △ | Endpoint công khai nên admin gọi được, nhưng không nằm trong luồng nghiệp vụ của admin — họ dùng F-005 / F-007 |
 | F-007 | Manage room types (CRUD) | — | — | ✅ | Gồm cả số phòng của mỗi loại; hạ về 0 là ngừng bán loại đó |
 | F-008 | Raise a booking request | — | ✅ | — | |
 | F-009 | View own booking history | — | ✅ | — | Chỉ request của mình; admin xem toàn bộ qua F-011 |
@@ -46,3 +46,4 @@
 | 2026-09-19 | — | Dịch phần diễn giải sang tiếng Việt; heading, tên cột và tên function giữ tiếng Anh |
 | 2026-09-19 | — | Đơn vị được bán đổi sang loại phòng: sửa mô tả ROLE-001, và chép lại tên function mới của F-005, F-006, F-007, F-013, F-017 cho khớp `function-list.md` |
 | 2026-09-19 | — | F-013 đổi thành "Review a completed booking" cho khớp `function-list.md` |
+| 2026-09-24 | — | F-005: Visitor và User chỉ còn xem chi tiết, danh sách chỉ cho admin; sửa mô tả ROLE-001 và ghi chú F-006 theo đó |

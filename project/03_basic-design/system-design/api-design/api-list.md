@@ -39,9 +39,11 @@
 { "id": 7, "email": "an@example.com", "fullName": "Nguyễn Văn An", "role": "user",
   "status": "active", "createdAt": "2026-09-21T07:41:00Z" }
 
-// RoomType
-{ "id": 3, "name": "Deluxe Sea View", "description": "…", "pricePerNight": 1500000, "totalRooms": 3,
+// RoomType   (công khai: không có số phòng của khách sạn)
+{ "id": 3, "name": "Deluxe Sea View", "description": "…", "pricePerNight": 1500000,
   "amenities": ["wifi", "tv", "balcony", "bed_king", "view_sea"], "createdAt": "…", "updatedAt": "…" }
+
+// AdminRoomType = RoomType + "totalRooms": 3   (chỉ route /admin/room-types)
 
 // BookingRequest   (bản `/admin`: thêm "user": { id, email, fullName })
 { "id": 42, "roomType": { "id": 3, "name": "Deluxe Sea View" }, "roomsRequested": 2,
@@ -87,8 +89,8 @@
 | 8   | F-006               | GET    | `/room-types`                        | Public      | query: checkInDate, checkOutDate (bắt buộc), rooms (1–5, mặc định 1), amenities[], page, perPage | List\<RoomType\>       | Thiếu ngày → 400; ngày cùng luật với dòng 14 (check-in từ ngày mai, ≤ 12 tháng, 1–30 đêm), `rooms` cùng giới hạn với `roomsRequested`. Chỉ trả loại còn ≥ `rooms` phòng trống ở mọi đêm; `meta.total` chỉ đếm các loại này. Item là RoomType thường, không có số phòng trống |
 | 9   | F-005               | GET    | `/room-types/:id`                    | Public      | —                                                                    | RoomType               |                                                                                          |
 | 10  | F-013               | GET    | `/room-types/:id/reviews`            | Public      | query: page, perPage                                                 | List\<Review\>         | Chỉ `approved`                                                                           |
-| 11  | F-007               | POST   | `/admin/room-types`                  | Admin       | body: name, description, pricePerNight, totalRooms, amenities[]      | RoomType               | 409 name trùng                                                                           |
-| 12  | F-007               | PATCH  | `/admin/room-types/:id`              | Admin       | body: các field trên, tuỳ chọn                                       | RoomType               | `amenities` gửi = thay toàn bộ                                                           |
+| 11  | F-007               | POST   | `/admin/room-types`                  | Admin       | body: name, description, pricePerNight, totalRooms, amenities[]      | AdminRoomType          | 409 name trùng                                                                           |
+| 12  | F-007               | PATCH  | `/admin/room-types/:id`              | Admin       | body: các field trên, tuỳ chọn                                       | AdminRoomType          | `amenities` gửi = thay toàn bộ                                                           |
 | 13  | F-007               | DELETE | `/admin/room-types/:id`              | Admin       | —                                                                    | —                      | 409 khi đã có request (FK)                                                               |
 | 14  | F-008               | POST   | `/booking-requests`                  | User        | body: roomTypeId, roomsRequested, checkInDate, checkOutDate          | BookingRequest         | Check-in sớm nhất là ngày mai. Admin → 403; `roomTypeId` không có → 404; 409 `Room type is not bookable` khi `totalRooms = 0`, 409 `Not enough rooms on <ngày>, …` liệt kê mọi đêm thiếu |
 | 15  | F-009               | GET    | `/booking-requests`                  | User        | query: page, perPage, status, roomTypeId                             | List\<BookingRequest\> | Chỉ của mình (admin → 403); `createdAt` giảm dần. `status` là giá trị trong DB: hold quá hạn vẫn `pending` tới lượt cron kế tiếp |
@@ -109,7 +111,7 @@
 | 30  | F-019               | GET    | `/admin/statistics/revenue`          | Admin       | query: from, to, roomTypeId, groupBy (month, roomType)               | Statistics             | Theo `payments.createdAt`                                                                |
 | 31  | F-011               | GET    | `/admin/booking-requests`            | Admin       | query: page, perPage, status, roomTypeId, userId                     | List\<BookingRequest\> | Tất cả, kèm `user`; `createdAt` giảm dần                                                  |
 | 32  | F-011               | GET    | `/admin/booking-requests/:id`        | Admin       | —                                                                    | BookingRequest         | Kèm `user`                                                                               |
-| 33  | F-017               | GET    | `/admin/room-types`                  | Admin       | query: như dòng 8, format                                            | List\<RoomType\>       | `format=xlsx` → file                                                                     |
+| 33  | F-005, F-017        | GET    | `/admin/room-types`                  | Admin       | query: page, perPage, amenities[], format                            | List\<AdminRoomType\>  | Mọi loại phòng, không cần ngày, kể cả loại đã ngừng bán; `format=xlsx` → file (F-017)    |
 
 ## 4. Triggers (không phải endpoint)
 
@@ -135,5 +137,6 @@
 
 | Date | What changed | Why |
 | --- | --- | --- |
-| 2026-09-24 | Dòng 8 chỉ còn là tìm kiếm (F-006): `checkInDate`, `checkOutDate` bắt buộc, thêm `rooms`; bỏ `availableRooms` khỏi RoomType. Không còn danh sách loại phòng không kèm ngày; F-005 chỉ còn phần chi tiết (dòng 9) | Người dùng xem loại phòng là để chuẩn bị đặt, nên luôn có kỳ lưu trú; một danh sách không ngày không trả lời được câu "còn phòng không". Server tự so số phòng trống với `rooms`, nên client không phải tự so với `availableRooms`: luật "đủ phòng" chỉ nằm một chỗ, giống lúc đặt. Admin sẽ xem danh sách ở `/admin/room-types` khi làm F-007 |
+| 2026-09-24 | `RoomType` công khai (dòng 8–9) bỏ `totalRooms`; route admin (dòng 11–12, 33) trả `AdminRoomType` có `totalRooms` | Số phòng là tồn kho nội bộ của khách sạn: khách không cần để quyết định đặt (tìm kiếm đã lọc theo `rooms`), dễ bị đọc nhầm thành số phòng còn trống, và lộ quy mô khách sạn cho bất kỳ ai |
+| 2026-09-24 | Dòng 8 chỉ còn là tìm kiếm (F-006): `checkInDate`, `checkOutDate` bắt buộc, thêm `rooms`; bỏ `availableRooms` khỏi RoomType. Không còn danh sách loại phòng không kèm ngày; F-005 chỉ còn phần chi tiết (dòng 9) | Người dùng xem loại phòng là để chuẩn bị đặt, nên luôn có kỳ lưu trú; một danh sách không ngày không trả lời được câu "còn phòng không". Server tự so số phòng trống với `rooms`, nên client không phải tự so với `availableRooms`: luật "đủ phòng" chỉ nằm một chỗ, giống lúc đặt. Danh sách không ngày chuyển sang admin (F-005, dòng 33); chi tiết (dòng 9) vẫn công khai |
 | 2026-09-24 | Route chỉ admin chuyển xuống `/admin/...` (dòng 11–13, 18–19, 22–30); dòng 15–16 chỉ còn phần của user, phần admin tách thành dòng 31–32; export Excel (F-017) tách khỏi dòng 8 thành dòng 33 | Mỗi route một shape, service không rẽ nhánh theo role, một guard cho mỗi controller admin |
