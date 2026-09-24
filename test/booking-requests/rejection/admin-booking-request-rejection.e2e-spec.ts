@@ -14,6 +14,7 @@ import {
   createUser,
   DEFAULT_PASSWORD,
 } from '../../support/factories/user.factory.js';
+import { clearMailbox, countMail, waitForMail } from '../../support/mailpit.js';
 import { resetDb } from '../../support/reset-db.js';
 
 import type { BookingRequestStatus } from '../../../src/booking-requests/entities/booking-request.entity.js';
@@ -43,7 +44,7 @@ describe('admin booking request rejection (e2e)', () => {
   afterAll(() => app.close());
 
   beforeEach(async () => {
-    await resetDb(app);
+    await Promise.all([resetDb(app), clearMailbox()]);
     admin = await createUser(app, { role: 'admin' });
     guest = await createUser(app);
     roomType = await createRoomType(app, { totalRooms: 1 });
@@ -131,6 +132,30 @@ describe('admin booking request rejection (e2e)', () => {
     expect(await app.get(BookingRequestExpirationService).expireOverdue()).toBe(
       0,
     );
+  });
+
+  it('mails the guest the rejection with its reason', async () => {
+    const bookingRequest = await book();
+
+    await reject(bookingRequest.id).expect(201);
+
+    const mail = await waitForMail(guest.email);
+    expect(mail.Subject).toBe(
+      `Yêu cầu đặt phòng #${bookingRequest.id} bị từ chối`,
+    );
+    expect(mail.Text).toContain(roomType.name);
+    expect(mail.Text).toContain(reason);
+    expect(mail.HTML).toContain(reason);
+  });
+
+  it('mails nothing when it refuses', async () => {
+    const refused = await book({ status: 'approved' });
+    await reject(refused.id).expect(409);
+    const rejected = await book({ status: 'pending' });
+    await reject(rejected.id).expect(201);
+
+    await waitForMail(guest.email);
+    expect(await countMail(guest.email)).toBe(1);
   });
 
   it.each<BookingRequestStatus>([

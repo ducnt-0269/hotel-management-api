@@ -13,6 +13,7 @@ import {
   createUser,
   DEFAULT_PASSWORD,
 } from '../../support/factories/user.factory.js';
+import { clearMailbox, countMail, waitForMail } from '../../support/mailpit.js';
 import { resetDb } from '../../support/reset-db.js';
 
 import type { BookingRequestStatus } from '../../../src/booking-requests/entities/booking-request.entity.js';
@@ -41,7 +42,7 @@ describe('admin booking request approval (e2e)', () => {
   afterAll(() => app.close());
 
   beforeEach(async () => {
-    await resetDb(app);
+    await Promise.all([resetDb(app), clearMailbox()]);
     admin = await createUser(app, { role: 'admin' });
     guest = await createUser(app);
     roomType = await createRoomType(app, { totalRooms: 1 });
@@ -108,6 +109,29 @@ describe('admin booking request approval (e2e)', () => {
     expect(res.body.message).toBe('Booking request has expired');
     expect(await storedStatus(bookingRequest.id)).toBe('pending');
     expect(await approvals().count()).toBe(0);
+  });
+
+  it('mails the guest the approved stay', async () => {
+    const bookingRequest = await book();
+
+    await approve(bookingRequest.id).expect(201);
+
+    const mail = await waitForMail(guest.email);
+    expect(mail.Subject).toBe(
+      `Yêu cầu đặt phòng #${bookingRequest.id} đã được duyệt`,
+    );
+    expect(mail.Text).toContain(roomType.name);
+    expect(mail.HTML).toContain(roomType.name);
+  });
+
+  it('mails nothing when it refuses', async () => {
+    const refused = await book({ status: 'rejected' });
+    await approve(refused.id).expect(409);
+    const approved = await book();
+    await approve(approved.id).expect(201);
+
+    await waitForMail(guest.email);
+    expect(await countMail(guest.email)).toBe(1);
   });
 
   it.each<BookingRequestStatus>([

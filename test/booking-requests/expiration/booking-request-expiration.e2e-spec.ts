@@ -14,6 +14,7 @@ import {
   createUser,
   DEFAULT_PASSWORD,
 } from '../../support/factories/user.factory.js';
+import { clearMailbox, waitForMail } from '../../support/mailpit.js';
 import { resetDb } from '../../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
@@ -35,7 +36,9 @@ describe('booking request hold expiry (e2e)', () => {
 
   afterAll(() => app.close());
 
-  beforeEach(() => resetDb(app));
+  beforeEach(async () => {
+    await Promise.all([resetDb(app), clearMailbox()]);
+  });
 
   const repository = <T extends object>(entity: new () => T) =>
     app.get(DataSource).getRepository(entity);
@@ -76,6 +79,24 @@ describe('booking request hold expiry (e2e)', () => {
         checkOutDate: day(12),
       })
       .expect(201);
+  });
+
+  it('mails the guest that the hold expired', async () => {
+    const user = await createUser(app);
+    const roomType = await createRoomType(app);
+    const overdue = await createBookingRequest(app, {
+      user,
+      roomType,
+      checkInDate: day(10),
+      checkOutDate: day(12),
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+
+    await app.get(BookingRequestExpirationService).expireOverdue();
+
+    const mail = await waitForMail(user.email);
+    expect(mail.Subject).toBe(`Yêu cầu đặt phòng #${overdue.id} đã hết hạn`);
+    expect(mail.Text).toContain(roomType.name);
   });
 
   it('leaves holds that are not yet due, and decided requests, alone', async () => {
