@@ -61,8 +61,6 @@ export class BookingRequestExpirationService {
     return ids.length;
   }
 
-  // The rows are already expired and no sweep will see them again, so one
-  // failed enqueue must not cost the rest of the batch its mail.
   private async mailExpired(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
 
@@ -72,16 +70,9 @@ export class BookingRequestExpirationService {
       where: { id: In(ids) },
     });
     for (const bookingRequest of expired) {
-      try {
-        await this.mailService.enqueueBookingRequestExpirationEmail(
-          bookingRequest,
-        );
-      } catch (error) {
-        this.logger.error(
-          `Expiry mail for booking request #${bookingRequest.id} failed`,
-          error,
-        );
-      }
+      await this.mailService.enqueueBookingRequestExpirationEmail(
+        bookingRequest,
+      );
     }
   }
 }
