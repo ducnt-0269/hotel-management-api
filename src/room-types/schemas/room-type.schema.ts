@@ -57,7 +57,6 @@ export const roomTypeResponseSchema = z.object({
   name: z.string(),
   description: z.string(),
   pricePerNight: z.number().int(),
-  totalRooms: z.number().int(),
   amenities: z.array(amenityResponseSchema),
   createdAt: z.date().meta(timestamp),
   updatedAt: z.date().meta(timestamp),

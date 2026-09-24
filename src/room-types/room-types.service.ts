@@ -15,7 +15,8 @@ import type {
 } from './schemas/room-type.schema.js';
 import type { FindOptionsSelect } from 'typeorm';
 
-// Exactly the columns `toRoomTypeResponse` reads.
+// The columns `toRoomTypeResponse` reads, plus `totalRooms` for the
+// availability count; inventory size stays out of the public response.
 const roomTypeResponseColumns: FindOptionsSelect<RoomType> = {
   id: true,
   name: true,

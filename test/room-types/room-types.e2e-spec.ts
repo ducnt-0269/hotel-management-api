@@ -61,7 +61,6 @@ describe('room types (e2e)', () => {
           name: 'Deluxe Sea View',
           description: 'Phòng 35m² giường king, ban công hướng biển.',
           pricePerNight: 2_200_000,
-          totalRooms: 4,
           // Alphabetical by code, not the order they were linked in.
           amenities: [
             { id: expect.any(Number), code: 'bed_king' },
@@ -136,7 +135,6 @@ describe('room types (e2e)', () => {
         name: 'Standard Twin',
         description: 'Phòng 22m² với hai giường đơn.',
         pricePerNight: 850_000,
-        totalRooms: 10,
         amenities: [
           { id: expect.any(Number), code: 'tv' },
           { id: expect.any(Number), code: 'wifi' },
