@@ -13,6 +13,7 @@ import { AuthService } from './auth.service.js';
 import { UserEmailVerificationToken } from './entities/user-email-verification-token.entity.js';
 import { UserEmailVerification } from './entities/user-email-verification.entity.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
 import { JwtStrategy } from './jwt.strategy.js';
 
 import type { JwtSignOptions } from '@nestjs/jwt';
@@ -46,6 +47,8 @@ import type { JwtSignOptions } from '@nestjs/jwt';
     JwtStrategy,
     // Authentication is on by default everywhere; @Public() opts out.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Must stay after JwtAuthGuard: global guards run in registration order.
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AuthModule {}

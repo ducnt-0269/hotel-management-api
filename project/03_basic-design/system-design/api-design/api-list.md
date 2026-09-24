@@ -111,7 +111,7 @@
 | --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | F-015     | Sau commit approval / rejection / expiration | Job `booking-request.notify` (BullMQ) → mail cho user, rejection kèm lý do                                            |
 | F-016     | Sau register                                 | Job `user.activation` → mail kèm link `/auth/activate?token=`                                                         |
-| F-008 E-4 | Cron mỗi phút                                | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail |
+| F-008 E-4 | Cron mỗi 30 phút                             | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail |
 | F-020     | Cron 23:59 ngày cuối tháng                   | Tổng hợp doanh thu tháng (cùng service với No 30) → mail cho mọi admin                                                |
 
 ## 5. Open Items
@@ -137,3 +137,4 @@
 | 2026-09-22 | —          | Ràng buộc input chốt thêm: `password` tối thiểu 8 và tối đa **72 byte** (giới hạn thật của bcrypt, không phải 72 ký tự — tiếng Việt có dấu 3 byte/ký tự); `fullName` chỉ nhận chữ mọi hệ chữ + dấu tổ hợp + khoảng trắng + `' ’ . -` |
 | 2026-09-22 | —          | Slice auth: dòng 1–7 đã implement. Token kích hoạt chốt là 32 byte ngẫu nhiên, lưu sha256 hex ở `token_hash`, TTL 24h, link `{APP_BASE_URL}/api/auth/activate?token=` (không có frontend nên trỏ thẳng vào API). `POST /auth/logout` và `PUT /me/password` trả 204 |
 | 2026-09-23 | —          | Slice booking: dòng 14 và trigger `F-008 E-4` (cron hết hạn hold, chưa gửi mail) đã implement. `POST /booking-requests` chỉ role `user` (admin → 403); 404 khi `roomTypeId` không tồn tại; 409 `Room type is not bookable` khi `totalRooms = 0`, 409 `Not enough rooms on <ngày>, …` liệt kê mọi đêm thiếu. Ngày check-in sớm nhất là ngày mai |
+| 2026-09-23 | —          | Cron hết hạn hold đổi từ mỗi phút sang **mỗi 30 phút**. Kiểm tra chỗ trống giờ bỏ qua request `pending` đã qua `expiresAt` ngay lập tức, nên cron chỉ còn đồng bộ `status` và ghi `booking_request_expirations`; tần suất không còn ảnh hưởng tới việc đặt được phòng. Duyệt đơn (F-011) phải tự kiểm tra `expiresAt` |

@@ -2,10 +2,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 
 import { AmenitiesModule } from './amenities/amenities.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { BookingRequestsModule } from './booking-requests/booking-requests.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -24,12 +26,14 @@ const here = fileURLToPath(new URL('.', import.meta.url));
       loaderOptions: { path: join(here, 'i18n'), watch: false },
       resolvers: [AcceptLanguageResolver],
     }),
+    ScheduleModule.forRoot(),
     HealthModule,
     MailModule,
     UsersModule,
     AuthModule,
     AmenitiesModule,
     RoomTypesModule,
+    BookingRequestsModule,
   ],
 })
 export class AppModule {}
