@@ -20,6 +20,20 @@ import type {
   CreateBookingRequestBody,
   ListOwnBookingRequestsQuery,
 } from './schemas/booking-request.schema.js';
+import type { FindOptionsSelect } from 'typeorm';
+
+// Exactly the columns `toBookingRequestResponse` reads.
+const bookingRequestResponseColumns: FindOptionsSelect<BookingRequest> = {
+  id: true,
+  roomsRequested: true,
+  checkInDate: true,
+  checkOutDate: true,
+  totalAmount: true,
+  status: true,
+  expiresAt: true,
+  createdAt: true,
+  roomType: { id: true, name: true },
+};
 
 @Injectable()
 export class BookingRequestsService {
@@ -35,6 +49,7 @@ export class BookingRequestsService {
   ): Promise<Paginated<BookingRequestResponse>> {
     const { status, roomTypeId } = query;
     const [rows, total] = await this.bookingRequestsRepository.findAndCount({
+      select: bookingRequestResponseColumns,
       where: {
         ...(status && { status }),
         ...(roomTypeId && { roomTypeId: String(roomTypeId) }),
@@ -54,6 +69,7 @@ export class BookingRequestsService {
   // Someone else's request is a 404, not a 403: its existence stays private.
   async findOwn(user: User, id: number): Promise<BookingRequestResponse> {
     const bookingRequest = await this.bookingRequestsRepository.findOne({
+      select: bookingRequestResponseColumns,
       where: { id: String(id), userId: user.id },
       relations: { roomType: true },
     });
