@@ -4,7 +4,7 @@ import { bookingRequestExpirationEmail } from './booking-request-expiration-emai
 import { bookingRequestRejectionEmail } from './booking-request-rejection-email.js';
 
 import type { MailRenderer } from '../../../test/support/mail-renderer.js';
-import type { BookingRequestMailData } from './booking-request-mail-data.js';
+import type { BookingRequestMailData } from '../../booking-requests/booking-request-mail-data.js';
 
 const data: BookingRequestMailData = {
   id: '128',

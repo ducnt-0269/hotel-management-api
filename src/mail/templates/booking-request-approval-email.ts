@@ -2,9 +2,9 @@ import {
   bookingRequestDetails,
   bookingRequestSummaryText,
   bookingRequestTranslator,
-} from './booking-request-mail-data.js';
+} from './booking-request-mail-format.js';
 
-import type { BookingRequestMailData } from './booking-request-mail-data.js';
+import type { BookingRequestMailData } from '../../booking-requests/booking-request-mail-data.js';
 import type { ISendMailOptions } from '@nestjs-modules/mailer';
 import type { I18nService } from 'nestjs-i18n';
 

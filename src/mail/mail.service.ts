@@ -9,8 +9,8 @@ import { bookingRequestApprovalEmail } from './templates/booking-request-approva
 import { bookingRequestExpirationEmail } from './templates/booking-request-expiration-email.js';
 import { bookingRequestRejectionEmail } from './templates/booking-request-rejection-email.js';
 
+import type { BookingRequestMailData } from '../booking-requests/booking-request-mail-data.js';
 import type { User } from '../users/entities/user.entity.js';
-import type { BookingRequestMailData } from './templates/booking-request-mail-data.js';
 
 @Injectable()
 export class MailService {

@@ -7,7 +7,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import { MailService } from '../../mail/mail.service.js';
-import { BOOKING_REQUEST_MAIL_SELECT } from '../../mail/templates/booking-request-mail-data.js';
+import { BOOKING_REQUEST_MAIL_SELECT } from '../booking-request-mail-data.js';
 import { BookingRequest } from '../entities/booking-request.entity.js';
 import { toBookingRequestApprovalResponse } from './booking-request-approval.mapper.js';
 import { BookingRequestApproval } from './entities/booking-request-approval.entity.js';
