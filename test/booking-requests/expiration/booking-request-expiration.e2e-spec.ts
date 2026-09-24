@@ -2,19 +2,19 @@ import { DateTime } from 'luxon';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { BookingRequestExpirationService } from '../src/booking-requests/booking-request-expiration.service.js';
-import { HOTEL_TIME_ZONE } from '../src/booking-requests/booking-request.constants.js';
-import { BookingRequestExpiration } from '../src/booking-requests/entities/booking-request-expiration.entity.js';
-import { BookingRequest } from '../src/booking-requests/entities/booking-request.entity.js';
-import { signIn } from './support/auth.js';
-import { createTestApp } from './support/create-test-app.js';
-import { createBookingRequest } from './support/factories/booking-request.factory.js';
-import { createRoomType } from './support/factories/room-type.factory.js';
+import { HOTEL_TIME_ZONE } from '../../../src/booking-requests/booking-request.constants.js';
+import { BookingRequest } from '../../../src/booking-requests/entities/booking-request.entity.js';
+import { BookingRequestExpirationService } from '../../../src/booking-requests/expiration/booking-request-expiration.service.js';
+import { BookingRequestExpiration } from '../../../src/booking-requests/expiration/entities/booking-request-expiration.entity.js';
+import { signIn } from '../../support/auth.js';
+import { createTestApp } from '../../support/create-test-app.js';
+import { createBookingRequest } from '../../support/factories/booking-request.factory.js';
+import { createRoomType } from '../../support/factories/room-type.factory.js';
 import {
   createUser,
   DEFAULT_PASSWORD,
-} from './support/factories/user.factory.js';
-import { resetDb } from './support/reset-db.js';
+} from '../../support/factories/user.factory.js';
+import { resetDb } from '../../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
 

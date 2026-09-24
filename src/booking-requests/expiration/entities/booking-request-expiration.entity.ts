@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { BookingRequest } from './booking-request.entity.js';
+import { BookingRequest } from '../../entities/booking-request.entity.js';
 
 // Outcome table: INSERT-only, one timestamp, no nullable column. No actor —
 // expiry is always the system's (pending → expired).

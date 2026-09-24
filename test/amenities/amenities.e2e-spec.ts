@@ -1,8 +1,8 @@
 import request from 'supertest';
 
-import { createTestApp } from './support/create-test-app.js';
-import { createAmenity } from './support/factories/amenity.factory.js';
-import { resetDb } from './support/reset-db.js';
+import { createTestApp } from '../support/create-test-app.js';
+import { createAmenity } from '../support/factories/amenity.factory.js';
+import { resetDb } from '../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
 
