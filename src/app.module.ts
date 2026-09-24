@@ -8,6 +8,7 @@ import { AcceptLanguageResolver, I18nModule } from 'nestjs-i18n';
 import { AmenitiesModule } from './amenities/amenities.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { BookingRequestsModule } from './booking-requests/booking-requests.module.js';
+import { DEFAULT_LANGUAGE } from './common/i18n/default-language.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -22,7 +23,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
     AppConfigModule,
     DatabaseModule,
     I18nModule.forRoot({
-      fallbackLanguage: 'vi',
+      fallbackLanguage: DEFAULT_LANGUAGE,
       loaderOptions: { path: join(here, 'i18n'), watch: false },
       resolvers: [AcceptLanguageResolver],
     }),

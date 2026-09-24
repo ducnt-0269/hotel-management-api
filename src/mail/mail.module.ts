@@ -1,15 +1,10 @@
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { MailerModule, MailerQueueModule } from '@nestjs-modules/mailer';
-import { MjmlAdapter } from '@nestjs-modules/mailer/adapters/mjml.adapter';
 import { Module } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 
 import { EnvService } from '../config/env.service.js';
+import { mailTemplateOptions } from './mail-template-options.js';
 import { MailService } from './mail.service.js';
-
-const here = fileURLToPath(new URL('.', import.meta.url));
 
 // MailerQueueModule brings its own BullMQ queue and worker, so there is no
 // hand-written processor: enqueue() puts the rendered mail on Redis and the
@@ -27,26 +22,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
           ignoreTLS: true,
         },
         defaults: { from: envService.get('MAIL_FROM') },
-        // Handlebars fills the MJML source, then MJML compiles it to the
-        // table markup Outlook understands. CSS inlining is MJML's job, so
-        // the Handlebars adapter's own inliner stays off.
-        template: {
-          dir: join(here, 'templates'),
-          // `t` reads src/i18n in the language the context's `i18nLang` names.
-          adapter: new MjmlAdapter(
-            'handlebars',
-            { inlineCssEnabled: false },
-            { handlebar: { helper: { t: i18nService.hbsHelper } } },
-          ),
-          // Handlebars compile options for the mail template; `strict` turns
-          // a missing context value into an error instead of a blank space in
-          // someone's inbox. The adapter compiles layout.hbs without them, so
-          // a missing `i18nLang` there falls back to the default language.
-          options: { strict: true },
-        },
-        // Runtime options, read from the top level rather than from
-        // `template`: every mail is wrapped in templates/layout.hbs.
-        options: { layout: 'layout' },
+        ...mailTemplateOptions(i18nService),
       }),
     }),
     MailerQueueModule.registerAsync({
