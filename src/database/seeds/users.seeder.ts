@@ -1,7 +1,7 @@
 import { UserEmailVerification } from '../../auth/entities/user-email-verification.entity.js';
 import { hashPassword } from '../../common/security/password.js';
+import { UserDeactivation } from '../../users/deactivation/user-deactivation.entity.js';
 import { User } from '../../users/entities/user.entity.js';
-import { UserDeactivation } from '../../users/status-change/user-deactivation.entity.js';
 
 import type { UserRole, UserStatus } from '../../users/entities/user.entity.js';
 import type { DataSource, EntityManager } from 'typeorm';

@@ -12,7 +12,7 @@ import type { ListUsersQuery, UserResponse } from './schemas/user.schema.js';
 import type { FindOptionsWhere } from 'typeorm';
 
 // An admin looks accounts up. Switching them off and on lives in
-// status-change/; self-service lives in UsersService.
+// deactivation/ and reactivation/; self-service lives in UsersService.
 @Injectable()
 export class AdminUsersService {
   constructor(

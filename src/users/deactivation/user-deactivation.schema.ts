@@ -6,13 +6,13 @@ const timestamp = {
   examples: ['2026-09-22T04:08:46.495Z'],
 } as const;
 
-// Body of a deactivation or reactivation: the outcome row just recorded.
-export const userStatusChangeResponseSchema = z.object({
+// Body of a deactivation: the outcome row just recorded.
+export const userDeactivationResponseSchema = z.object({
   userId: z.number().int(),
   adminUserId: z.number().int(),
   createdAt: z.date().meta(timestamp),
 });
 
-export type UserStatusChangeResponse = z.infer<
-  typeof userStatusChangeResponseSchema
+export type UserDeactivationResponse = z.infer<
+  typeof userDeactivationResponseSchema
 >;

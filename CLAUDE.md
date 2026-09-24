@@ -37,7 +37,7 @@ curl -s localhost:8025/api/v1/message/{id}/html-check             # client-compa
 Node 24 (`.nvmrc`). CI (`Quality gate`) runs lint → format:check → build → unit → e2e on every push and PR.
 
 Testing: e2e over HTTP against real Postgres is primary (`test/` mirrors `src/`, one file per controller:
-`test/users/status-change/admin-user-status-change.e2e-spec.ts`; `resetDb(app)` in `beforeEach`,
+`test/users/deactivation/admin-user-deactivation.e2e-spec.ts`; `resetDb(app)` in `beforeEach`,
 fixtures via fishery + faker in `test/support/factories/`); unit specs only for pure functions. No mocked repositories.
 e2e shares Redis db 0, the `mail` queue and Mailpit with `npm run start:dev`, so a run clears your dev inbox
 (`clearMailbox()` in `beforeEach`). Give e2e its own queue name / Redis db when that starts to hurt.
@@ -52,12 +52,15 @@ lives in `src/auth/`, not `src/users/`. Injected properties are named after thei
 
 - **Slices.** The module root holds the resource itself, sorted by kind. Each lifecycle transition
   that writes an outcome table gets a subfolder, files flat inside with full names kept, and owns its
-  controller, pathed at the sub-resource: `users/status-change/` (`@Controller('admin/users/:id')`
-  → `/deactivation`, `/reactivation`), `booking-requests/expiration/` (a cron, so no controller).
-  Two mirror transitions share one slice and one service; an outcome written as one step of a larger
-  flow (email verification) stays in that flow. No `index.ts` barrels, no deeper nesting.
+  controller, pathed at the sub-resource: `users/deactivation/`
+  (`@Controller('admin/users/:id/deactivation')`), `booking-requests/expiration/` (a cron, so no
+  controller). One transition, one slice — even when two look alike today (deactivation and
+  reactivation are two slices): the likeness is incidental, and the two change for different reasons.
+  Knowledge that is truly shared (a guard both transitions must apply) goes in one function at the
+  module root that both slices call. An outcome written as one step of a larger flow (email
+  verification) stays in that flow. No `index.ts` barrels, no deeper nesting.
 - **`admin-` prefix.** An admin route's controller and service always carry it
-  (`admin-users.controller.ts`, `status-change/admin-user-status-change.service.ts`); a schema or
+  (`admin-users.controller.ts`, `deactivation/admin-user-deactivation.service.ts`); a schema or
   mapper carries it only as the admin variant of a shape the user side also has. Entities never do.
   Admin files import shared ones, never the reverse.
 
@@ -152,7 +155,7 @@ Never write code that updates `status` without inserting the matching outcome ro
   form, and `z.input` of a coerced field is `unknown`). Its type is `z.infer`, never hand-written.
   `to<Entity>Response()` in `<entity>.mapper.ts` at the module root builds that exact shape — bigint
   strings become integers there with `Number(...)`; the schema file stays pure Zod. A slice's schema
-  and mapper live in the slice, named after it (`status-change/user-status-change.mapper.ts`), never
+  and mapper live in the slice, named after it (`deactivation/user-deactivation.mapper.ts`), never
   added to the parent's files. A service method
   backing a route returns `<Entity>Response`; a route that calls no service converts in the
   controller. `z.coerce` stays for input (query, params, env) only.
