@@ -1,16 +1,16 @@
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { hashActivationToken } from '../src/auth/activation-token.js';
-import { UserEmailVerificationToken } from '../src/auth/entities/user-email-verification-token.entity.js';
-import { signIn } from './support/auth.js';
-import { createTestApp } from './support/create-test-app.js';
+import { hashActivationToken } from '../../src/auth/activation-token.js';
+import { UserEmailVerificationToken } from '../../src/auth/entities/user-email-verification-token.entity.js';
+import { signIn } from '../support/auth.js';
+import { createTestApp } from '../support/create-test-app.js';
 import {
   createUser,
   DEFAULT_PASSWORD,
-} from './support/factories/user.factory.js';
-import { clearMailbox, waitForMail } from './support/mailpit.js';
-import { resetDb } from './support/reset-db.js';
+} from '../support/factories/user.factory.js';
+import { clearMailbox, waitForMail } from '../support/mailpit.js';
+import { resetDb } from '../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
 

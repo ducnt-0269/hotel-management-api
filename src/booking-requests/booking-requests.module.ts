@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { BookingRequestExpirationService } from './booking-request-expiration.service.js';
 import { BookingRequestsController } from './booking-requests.controller.js';
 import { BookingRequestsService } from './booking-requests.service.js';
-import { BookingRequestExpiration } from './entities/booking-request-expiration.entity.js';
 import { BookingRequest } from './entities/booking-request.entity.js';
+import { BookingRequestExpiration } from './expiration/booking-request-expiration.entity.js';
+import { BookingRequestExpirationService } from './expiration/booking-request-expiration.service.js';
 
 @Module({
   imports: [

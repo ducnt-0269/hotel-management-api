@@ -2,20 +2,20 @@ import { DateTime } from 'luxon';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { HOTEL_TIME_ZONE } from '../src/booking-requests/booking-request.constants.js';
-import { BookingRequest } from '../src/booking-requests/entities/booking-request.entity.js';
-import { RoomType } from '../src/room-types/entities/room-type.entity.js';
-import { signIn } from './support/auth.js';
-import { createTestApp } from './support/create-test-app.js';
-import { createBookingRequest } from './support/factories/booking-request.factory.js';
-import { createRoomType } from './support/factories/room-type.factory.js';
+import { HOTEL_TIME_ZONE } from '../../src/booking-requests/booking-request.constants.js';
+import { BookingRequest } from '../../src/booking-requests/entities/booking-request.entity.js';
+import { RoomType } from '../../src/room-types/entities/room-type.entity.js';
+import { signIn } from '../support/auth.js';
+import { createTestApp } from '../support/create-test-app.js';
+import { createBookingRequest } from '../support/factories/booking-request.factory.js';
+import { createRoomType } from '../support/factories/room-type.factory.js';
 import {
   createUser,
   DEFAULT_PASSWORD,
-} from './support/factories/user.factory.js';
-import { resetDb } from './support/reset-db.js';
+} from '../support/factories/user.factory.js';
+import { resetDb } from '../support/reset-db.js';
 
-import type { User } from '../src/users/entities/user.entity.js';
+import type { User } from '../../src/users/entities/user.entity.js';
 import type { INestApplication } from '@nestjs/common';
 
 // Stays are placed relative to today in hotel time, so the "tomorrow at the

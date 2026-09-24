@@ -64,13 +64,6 @@ export const userIdParamSchema = z.coerce
   .positive()
   .max(Number.MAX_SAFE_INTEGER);
 
-// Body of a deactivation or reactivation: the outcome row just recorded.
-export const userStatusChangeResponseSchema = z.object({
-  userId: z.number().int(),
-  adminUserId: z.number().int(),
-  createdAt: z.date().meta(timestamp),
-});
-
 export const updateProfileBodySchema = z.object({ fullName: fullNameSchema });
 
 export const changePasswordBodySchema = z.object({
@@ -84,6 +77,3 @@ export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>;
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
-export type UserStatusChangeResponse = z.infer<
-  typeof userStatusChangeResponseSchema
->;

@@ -8,12 +8,12 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { User } from './user.entity.js';
+import { User } from '../entities/user.entity.js';
 
 // Outcome table: INSERT-only, one timestamp, no nullable column. Not UNIQUE on
-// the user: an account can be switched off and on again. (active → deactivated)
-@Entity('user_deactivations')
-export class UserDeactivation {
+// the user: an account can be switched off and on again. (deactivated → active)
+@Entity('user_reactivations')
+export class UserReactivation {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 

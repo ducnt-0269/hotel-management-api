@@ -6,53 +6,20 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
-import { paginate, toSkipTake } from '../common/pagination/paginate.js';
-import { containsText } from '../common/query/find-operators.js';
-import { UserDeactivation } from './entities/user-deactivation.entity.js';
-import { UserReactivation } from './entities/user-reactivation.entity.js';
-import { User } from './entities/user.entity.js';
-import { toUserResponse, toUserStatusChangeResponse } from './user.mapper.js';
+import { User } from '../entities/user.entity.js';
+import { UserDeactivation } from './user-deactivation.entity.js';
+import { UserReactivation } from './user-reactivation.entity.js';
+import { toUserStatusChangeResponse } from './user-status-change.mapper.js';
 
-import type { Paginated } from '../common/pagination/paginate.js';
-import type {
-  ListUsersQuery,
-  UserResponse,
-  UserStatusChangeResponse,
-} from './schemas/user.schema.js';
-import type { FindOptionsWhere } from 'typeorm';
+import type { UserStatusChangeResponse } from './user-status-change.schema.js';
 
-// What an admin does to other accounts. Self-service lives in UsersService.
+// An admin switches another account off and on again.
 @Injectable()
-export class UserManagementService {
+export class AdminUserStatusChangeService {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     @InjectRepository(User) private readonly usersRepository: Repository<User>,
   ) {}
-
-  async list(query: ListUsersQuery): Promise<Paginated<UserResponse>> {
-    const filters: FindOptionsWhere<User> = {
-      ...(query.status && { status: query.status }),
-      ...(query.role && { role: query.role }),
-    };
-
-    const [rows, total] = await this.usersRepository.findAndCount({
-      // An array of conditions is OR-ed, so each one repeats the filters.
-      where: query.q
-        ? [
-            { ...filters, email: containsText(query.q) },
-            { ...filters, fullName: containsText(query.q) },
-          ]
-        : filters,
-      order: { id: 'DESC' },
-      ...toSkipTake(query),
-    });
-
-    return paginate(rows.map(toUserResponse), total, query);
-  }
-
-  async findOne(id: number): Promise<UserResponse> {
-    return toUserResponse(await this.findUserOrFail(id));
-  }
 
   async deactivate(admin: User, id: number): Promise<UserStatusChangeResponse> {
     // Guards against locking every admin out, one self-deactivation at a time.

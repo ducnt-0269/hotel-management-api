@@ -1,9 +1,9 @@
 import request from 'supertest';
 
-import { signIn } from './support/auth.js';
-import { createTestApp } from './support/create-test-app.js';
-import { createUser } from './support/factories/user.factory.js';
-import { resetDb } from './support/reset-db.js';
+import { signIn } from '../support/auth.js';
+import { createTestApp } from '../support/create-test-app.js';
+import { createUser } from '../support/factories/user.factory.js';
+import { resetDb } from '../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
 

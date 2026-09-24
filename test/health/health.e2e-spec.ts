@@ -1,6 +1,6 @@
 import request from 'supertest';
 
-import { createTestApp } from './support/create-test-app.js';
+import { createTestApp } from '../support/create-test-app.js';
 
 import type { INestApplication } from '@nestjs/common';
 
