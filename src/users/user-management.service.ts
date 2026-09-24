@@ -7,7 +7,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
 import { paginate, toSkipTake } from '../common/pagination/paginate.js';
-import { containsText } from '../common/query/like-pattern.js';
+import { containsText } from '../common/query/find-operators.js';
 import { UserDeactivation } from './entities/user-deactivation.entity.js';
 import { UserReactivation } from './entities/user-reactivation.entity.js';
 import { User } from './entities/user.entity.js';

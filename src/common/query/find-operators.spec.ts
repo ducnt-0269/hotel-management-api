@@ -1,4 +1,4 @@
-import { escapeLikePattern } from './like-pattern.js';
+import { escapeLikePattern } from './find-operators.js';
 
 describe('escapeLikePattern', () => {
   it('leaves ordinary text alone', () => {
