@@ -6,6 +6,7 @@ const REASON: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
+  502: 'Bad Gateway',
 };
 
 // Documents one failure the way the API actually returns it: NestJS's default
