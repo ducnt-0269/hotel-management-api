@@ -50,6 +50,17 @@ jobs:
           --health-timeout 3s
           --health-retries 10
 
+      # Answers the Stripe calls the payment e2e makes; .env.test points the
+      # client here.
+      stripe-mock:
+        image: stripe/stripe-mock:v0.203.0
+        ports: ['12111:12111']
+        options: >-
+          --health-cmd "nc -z localhost 12111"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     env:
       NODE_ENV: test
       DB_HOST: localhost

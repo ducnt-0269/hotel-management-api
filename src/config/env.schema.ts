@@ -26,6 +26,17 @@ export const envSchema = z.object({
 
   JWT_SECRET: z.string().min(1),
   JWT_EXPIRES_IN: z.string().default('1d'),
+
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Set only to point the client at stripe-mock; unset means api.stripe.com.
+  STRIPE_API_HOST: z.string().optional(),
+  STRIPE_API_PORT: z.coerce.number().int().positive().optional(),
+  STRIPE_API_PROTOCOL: z.enum(['http', 'https']).optional(),
+  // Where Stripe sends the browser after checkout. Only a place to land:
+  // the webhook, not this redirect, is what records a payment.
+  PAYMENT_SUCCESS_URL: z.url(),
+  PAYMENT_CANCEL_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;

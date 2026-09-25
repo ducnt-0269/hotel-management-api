@@ -6,7 +6,10 @@ import { setupApiDocs } from './common/api-docs/setup-api-docs.js';
 import { EnvService } from './config/env.service.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    // The Stripe webhook signature is computed over the exact bytes sent.
+    rawBody: true,
+  });
   const envService = app.get(EnvService);
   configureApp(app);
   // Docs expose every route and let visitors fire real requests; dev/staging only.
