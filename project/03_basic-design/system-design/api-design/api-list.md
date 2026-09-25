@@ -117,8 +117,8 @@
 
 | F-ID      | Trigger                                      | Việc                                                                                                                  |
 | --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| F-015     | Sau commit approval / rejection / expiration | Job `booking-request.notify` (BullMQ) → mail cho user, rejection kèm lý do                                            |
-| F-016     | Sau register                                 | Job `user.activation` → mail kèm link `/auth/activate?token=`, ngôn ngữ lấy từ request đăng ký |
+| F-015     | Sau commit approval / rejection / expiration | Một mail vào hàng đợi `mail` (BullMQ) → mail cho user kèm tóm tắt booking, rejection kèm lý do. Viết bằng tiếng Việt (ngôn ngữ mặc định): không có request của khách để lấy ngôn ngữ |
+| F-016     | Sau register                                 | Một mail vào hàng đợi `mail` → mail kèm link `/auth/activate?token=`, ngôn ngữ lấy từ request đăng ký |
 | F-008 E-4 | Cron mỗi 30 phút                             | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail. Kiểm tra chỗ trống đã bỏ qua hold quá hạn ngay lập tức, nên cron chỉ đồng bộ `status`; duyệt (F-011) phải tự kiểm tra `expiresAt`; từ chối và huỷ thì không |
 | F-020     | Cron 23:59 ngày cuối tháng                   | Tổng hợp doanh thu tháng (cùng service với No 30) → mail cho mọi admin                                                |
 
@@ -137,6 +137,7 @@
 
 | Date | What changed | Why |
 | --- | --- | --- |
+| 2026-09-24 | §4: không có job `booking-request.notify` / `user.activation` riêng; mọi mail đi chung một hàng đợi `mail` của `MailerQueueModule` | Module mailer đã có sẵn queue và worker, job chỉ cần mang mail đã dựng. Tách job theo loại mail sẽ phải tự viết processor mà không được thêm gì |
 | 2026-09-24 | `RoomType` công khai (dòng 8–9) bỏ `totalRooms`; route admin (dòng 11–12, 33) trả `AdminRoomType` có `totalRooms` | Số phòng là tồn kho nội bộ của khách sạn: khách không cần để quyết định đặt (tìm kiếm đã lọc theo `rooms`), dễ bị đọc nhầm thành số phòng còn trống, và lộ quy mô khách sạn cho bất kỳ ai |
 | 2026-09-24 | Dòng 8 chỉ còn là tìm kiếm (F-006): `checkInDate`, `checkOutDate` bắt buộc, thêm `rooms`; bỏ `availableRooms` khỏi RoomType. Không còn danh sách loại phòng không kèm ngày; F-005 chỉ còn phần chi tiết (dòng 9) | Người dùng xem loại phòng là để chuẩn bị đặt, nên luôn có kỳ lưu trú; một danh sách không ngày không trả lời được câu "còn phòng không". Server tự so số phòng trống với `rooms`, nên client không phải tự so với `availableRooms`: luật "đủ phòng" chỉ nằm một chỗ, giống lúc đặt. Danh sách không ngày chuyển sang admin (F-005, dòng 33); chi tiết (dòng 9) vẫn công khai |
 | 2026-09-24 | Route chỉ admin chuyển xuống `/admin/...` (dòng 11–13, 18–19, 22–30); dòng 15–16 chỉ còn phần của user, phần admin tách thành dòng 31–32; export Excel (F-017) tách khỏi dòng 8 thành dòng 33 | Mỗi route một shape, service không rẽ nhánh theo role, một guard cho mỗi controller admin |

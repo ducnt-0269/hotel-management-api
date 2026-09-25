@@ -12,6 +12,14 @@ export async function clearMailbox(): Promise<void> {
   await fetch(`${BASE_URL}/api/v1/messages`, { method: 'DELETE' });
 }
 
+export async function countMail(to: string): Promise<number> {
+  const query = encodeURIComponent(`to:${to}`);
+  const found = (await (
+    await fetch(`${BASE_URL}/api/v1/search?query=${query}`)
+  ).json()) as { messages_count: number };
+  return found.messages_count;
+}
+
 // Polls rather than sleeps: the mail crosses Redis → worker → SMTP → Mailpit.
 export async function waitForMail(
   to: string,

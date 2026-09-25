@@ -12,5 +12,39 @@
     "fallback": "Nút không bấm được? Dán liên kết này vào trình duyệt:",
     "textBody": "Tài khoản của bạn đã được tạo. Mở liên kết sau để kích hoạt:",
     "expiry": "Liên kết hết hạn sau {expiryHours} giờ."
+  },
+  "bookingRequest": {
+    "subject": "Yêu cầu đặt phòng #{id} {status}",
+    "greeting": "Xin chào {fullName},",
+    "summary": {
+      "id": "Mã yêu cầu",
+      "roomType": "Loại phòng",
+      "checkIn": "Nhận phòng",
+      "checkOut": "Trả phòng",
+      "nights": "Số đêm",
+      "rooms": "Số phòng",
+      "total": "Tổng tiền"
+    },
+    "newRequest": "Bạn có thể gửi yêu cầu mới cho ngày khác.",
+    "approval": {
+      "status": "đã được duyệt",
+      "pill": "Đã duyệt",
+      "heading": "Yêu cầu đặt phòng đã được duyệt",
+      "body": "Khách sạn đã duyệt yêu cầu của bạn và giữ {rooms} phòng {roomTypeName} cho kỳ lưu trú dưới đây.",
+      "closing": "Hẹn gặp bạn vào ngày nhận phòng."
+    },
+    "rejection": {
+      "status": "bị từ chối",
+      "pill": "Bị từ chối",
+      "heading": "Yêu cầu đặt phòng bị từ chối",
+      "body": "Rất tiếc, khách sạn không thể nhận yêu cầu đặt phòng dưới đây của bạn.",
+      "reason": "Lý do"
+    },
+    "expiration": {
+      "status": "đã hết hạn",
+      "pill": "Hết hạn",
+      "heading": "Yêu cầu đặt phòng đã hết hạn",
+      "body": "Yêu cầu dưới đây chưa được xử lý trước hạn giữ phòng, nên đã hết hạn và số phòng đã được nhả."
+    }
   }
 }

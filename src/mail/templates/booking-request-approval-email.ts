@@ -1,0 +1,42 @@
+import {
+  bookingRequestDetails,
+  bookingRequestSummaryText,
+  bookingRequestTranslator,
+} from './booking-request-mail-format.js';
+
+import type { BookingRequestMailData } from '../../booking-requests/booking-request-mail-data.js';
+import type { ISendMailOptions } from '@nestjs-modules/mailer';
+import type { I18nService } from 'nestjs-i18n';
+
+// Subject and plain text are built here; the HTML is rendered from
+// `templates/booking-request-approval.mjml` in the queue worker, which is why the
+// language travels in the context as `i18nLang`.
+export function bookingRequestApprovalEmail(
+  i18n: I18nService,
+  lang: string,
+  data: BookingRequestMailData,
+): ISendMailOptions {
+  const details = bookingRequestDetails(lang, data);
+  const t = bookingRequestTranslator(i18n, lang, details);
+  const subject = t('subject', { status: t('approval.status') });
+
+  return {
+    subject,
+    template: 'booking-request-approval.mjml',
+    context: {
+      i18nLang: lang,
+      subject,
+      preview: t('approval.body'),
+      ...details,
+    },
+    text: [
+      t('greeting'),
+      '',
+      t('approval.body'),
+      '',
+      ...bookingRequestSummaryText(t, details),
+      '',
+      t('approval.closing'),
+    ].join('\n'),
+  };
+}

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { MailModule } from '../mail/mail.module.js';
 import { AdminBookingRequestApprovalController } from './approval/admin-booking-request-approval.controller.js';
 import { AdminBookingRequestApprovalService } from './approval/admin-booking-request-approval.service.js';
 import { BookingRequestApproval } from './approval/entities/booking-request-approval.entity.js';
@@ -18,6 +19,7 @@ import { BookingRequestRejection } from './rejection/entities/booking-request-re
 
 @Module({
   imports: [
+    MailModule,
     TypeOrmModule.forFeature([
       BookingRequest,
       BookingRequestApproval,

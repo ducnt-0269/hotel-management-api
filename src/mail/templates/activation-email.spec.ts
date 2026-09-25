@@ -1,61 +1,20 @@
-import { fileURLToPath } from 'node:url';
-
-import { MjmlAdapter } from '@nestjs-modules/mailer/adapters/mjml.adapter';
-import { Test } from '@nestjs/testing';
-import { I18nModule, I18nService } from 'nestjs-i18n';
-
+import { createMailRenderer } from '../../../test/support/mail-renderer.js';
 import { activationEmail } from './activation-email.js';
 
+import type { MailRenderer } from '../../../test/support/mail-renderer.js';
 import type { User } from '../../users/entities/user.entity.js';
 
-const templatesDir = fileURLToPath(new URL('.', import.meta.url));
-const i18nDir = fileURLToPath(new URL('../../i18n/', import.meta.url));
 const url = 'http://localhost:3000/api/auth/activate?token=abc123';
 
 function userNamed(fullName: string): User {
   return { fullName, email: 'an@example.com' } as User;
 }
 
-// Renders the real templates through the real adapter, so a broken .mjml or a
-// missing context value fails here rather than in a queue worker at runtime.
-function render(mail: ReturnType<typeof activationEmail>): Promise<string> {
-  const envelope = { data: { template: mail.template, context: mail.context } };
-
-  return new Promise((resolve, reject) => {
-    adapter.compile(
-      envelope,
-      (error?: Error) =>
-        error
-          ? reject(error)
-          : resolve((envelope.data as { html: string }).html),
-      {
-        template: { dir: templatesDir, options: { strict: true } },
-        options: { layout: 'layout' },
-      },
-    );
-  });
-}
-
-let i18n: I18nService;
-let adapter: MjmlAdapter;
+let i18n: MailRenderer['i18n'];
+let render: MailRenderer['render'];
 
 beforeAll(async () => {
-  const moduleRef = await Test.createTestingModule({
-    imports: [
-      I18nModule.forRoot({
-        fallbackLanguage: 'vi',
-        loaderOptions: { path: i18nDir, watch: false },
-        logging: false,
-      }),
-    ],
-  }).compile();
-  i18n = moduleRef.get(I18nService);
-  // Registers `t` on the global Handlebars instance, as MailModule does.
-  adapter = new MjmlAdapter(
-    'handlebars',
-    { inlineCssEnabled: false },
-    { handlebar: { helper: { t: i18n.hbsHelper } } },
-  );
+  ({ i18n, render } = await createMailRenderer());
 });
 
 describe('activationEmail', () => {
