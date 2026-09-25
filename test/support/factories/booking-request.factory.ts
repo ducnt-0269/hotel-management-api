@@ -14,6 +14,7 @@ export interface BookingRequestAttributes {
   checkInDate: string;
   checkOutDate: string;
   roomsRequested?: number;
+  totalAmount?: string;
   status?: BookingRequestStatus;
   expiresAt?: Date;
 }
@@ -33,7 +34,7 @@ export async function createBookingRequest(
       roomsRequested: attributes.roomsRequested ?? 1,
       checkInDate: attributes.checkInDate,
       checkOutDate: attributes.checkOutDate,
-      totalAmount: '0',
+      totalAmount: attributes.totalAmount ?? '0',
       status: attributes.status ?? 'pending',
       expiresAt:
         attributes.expiresAt ??
