@@ -4,9 +4,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { hashPassword, verifyPassword } from '../common/security/password.js';
+import { isUniqueViolation } from '../database/is-unique-violation.js';
 import { User } from './entities/user.entity.js';
 import { toUserResponse } from './user.mapper.js';
 
@@ -15,8 +16,6 @@ import type {
   UpdateProfileBody,
   UserResponse,
 } from './schemas/user.schema.js';
-
-const UNIQUE_VIOLATION = '23505';
 
 // Emails are compared case-insensitively by storing them lower-cased under a
 // plain UNIQUE index (database-design.md `## Deviations`).
@@ -58,10 +57,7 @@ export class UsersService {
     try {
       return await manager.save(user);
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error.driverError as { code?: string }).code === UNIQUE_VIOLATION
-      ) {
+      if (isUniqueViolation(error)) {
         throw new ConflictException('Email is already registered');
       }
       throw error;
