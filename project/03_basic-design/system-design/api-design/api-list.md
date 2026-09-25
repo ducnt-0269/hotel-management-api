@@ -54,8 +54,8 @@
 { "id": 5, "bookingRequestId": 42, "roomTypeId": 3, "rating": 5, "comment": "…",
   "status": "pending", "author": { "fullName": "Nguyễn Văn An" }, "createdAt": "…" }
 
-// Payment
-{ "id": 9, "bookingRequestId": 42, "amount": 6000000, "createdAt": "…" }
+// PaymentSession   (link trang thanh toán của Stripe; khách trả ở đó, không qua API)
+{ "url": "https://checkout.stripe.com/c/pay/cs_test_…", "expiresAt": "2026-09-26T07:41:00Z" }
 
 // Outcome
 { "bookingRequestId": 42, "adminUserId": 1, "createdAt": "…" }             // rejection thêm "reason"
@@ -98,7 +98,7 @@
 | 17  | F-010               | POST   | `/booking-requests/:id/cancellation` | User (chủ)  | —                                                                    | Outcome                | Admin → 403; 404 nếu không có hoặc của user khác; 409 `Booking request is not pending` khi `status` không còn `pending`. Hết hạn là việc của cron: hold đã qua `expiresAt` mà cron chưa quét vẫn `pending`, huỷ được |
 | 18  | F-011               | POST   | `/admin/booking-requests/:id/approval` | Admin       | —                                                                    | Outcome                | Guest → 403; 404 nếu không có; 409 `Booking request is not pending`; 409 `Booking request has expired` khi còn `pending` nhưng đã qua `expiresAt`. Không kiểm tra lại chỗ trống: hold `pending` còn hạn đã được tính. Sau commit → job mail (F-015) |
 | 19  | F-011               | POST   | `/admin/booking-requests/:id/rejection` | Admin       | body: reason                                                         | Outcome                | `reason` trim, 1–500 ký tự, rỗng → 400; 403/404/409 `not pending` như dòng 18, nhưng không kiểm tra `expiresAt`: hold quá hạn đã nhả phòng, từ chối không lấy gì của ai. Sau commit → job mail kèm lý do (F-015) |
-| 20  | F-012               | PUT    | `/booking-requests/:id/payment`      | User (chủ)  | —                                                                    | Payment                | Idempotent: lần đầu 201, sau 200 cùng body; 409 chưa approved                            |
+| 20  | F-012               | POST   | `/payment-sessions`                  | User (chủ)  | body: bookingRequestId                                               | PaymentSession         | 201, cả khi trả lại link còn mở. 404 không có / không phải của mình; 409 chưa approved, đã trả, link cũ đã hết hạn nhưng Stripe chưa báo (thử lại sau), hoặc hai request cùng lúc; 502 Stripe lỗi. Chỉ nhận thẻ, VND |
 | 21  | F-013               | POST   | `/booking-requests/:id/review`       | User (chủ)  | body: rating, comment                                                | Review (pending)       | 409 chưa approved / chưa qua checkOutDate / đã có review                                 |
 | 22  | F-014               | GET    | `/admin/reviews`                     | Admin       | query: status (mặc định pending), page, perPage                      | List\<Review\>         |                                                                                          |
 | 23  | F-014               | POST   | `/admin/reviews/:id/approval`        | Admin       | —                                                                    | Outcome                | 409 không còn pending                                                                    |
@@ -108,10 +108,11 @@
 | 27  | F-004               | POST   | `/admin/users/:id/deactivation`      | Admin       | —                                                                    | Outcome                | 409 không active; 409 tự khoá mình                                                       |
 | 28  | F-004               | POST   | `/admin/users/:id/reactivation`      | Admin       | —                                                                    | Outcome                | 409 không deactivated                                                                    |
 | 29  | F-018               | GET    | `/admin/statistics/booking-requests` | Admin       | query: groupBy (month, quarter, roomType), from, to                  | Statistics             | Theo `createdAt`                                                                         |
-| 30  | F-019               | GET    | `/admin/statistics/revenue`          | Admin       | query: from, to, roomTypeId, groupBy (month, roomType)               | Statistics             | Theo `payments.createdAt`                                                                |
+| 30  | F-019               | GET    | `/admin/statistics/revenue`          | Admin       | query: from, to, roomTypeId, groupBy (month, roomType)               | Statistics             | Theo `payments.paid_at`                                                                  |
 | 31  | F-011               | GET    | `/admin/booking-requests`            | Admin       | query: page, perPage, status, roomTypeId, userId                     | List\<BookingRequest\> | Tất cả, kèm `user`; `createdAt` giảm dần                                                  |
 | 32  | F-011               | GET    | `/admin/booking-requests/:id`        | Admin       | —                                                                    | BookingRequest         | Kèm `user`                                                                               |
 | 33  | F-005, F-017        | GET    | `/admin/room-types`                  | Admin       | query: page, perPage, amenities[], format                            | List\<AdminRoomType\>  | Mọi loại phòng, không cần ngày, kể cả loại đã ngừng bán; `format=xlsx` → file (F-017)    |
+| 34  | F-012               | POST   | `/payment-sessions/stripe-webhook`   | Stripe      | Event đã ký (header `Stripe-Signature`, raw body)                    | 204                    | Public, không có trong `/api/docs`. Chữ ký sai / cũ → 400. `checkout.session.completed` → ghi `payments`; `checkout.session.expired` → đóng session; event khác bỏ qua. Lỗi bất ngờ → 5xx để Stripe gửi lại |
 
 ## 4. Triggers (không phải endpoint)
 
@@ -130,6 +131,7 @@
 | 2   | Có cần `GET /booking-requests/:id/timeline` gộp 4 outcome? Hiện `status` + `rejectionReason` đủ cho F-009 |
 | 3   | Rate limit `/auth/*` (`@nestjs/throttler`) — không phải must, thêm nếu còn thời gian                      |
 | 4   | Khoá user (No 27) thì request `pending` của họ ra sao? **Đã chốt 2026-09-23**: không đụng tới — admin vẫn duyệt/từ chối, hoặc để tự hết hạn |
+| 5   | BookingRequest có cần `paidAt` (đã trả lúc nào) không? Để lại, làm cùng list / detail admin (dòng 31–32). Mail xác nhận thanh toán cũng chưa làm |
 
 ## 6. Deviations
 
@@ -141,3 +143,5 @@
 | 2026-09-24 | `RoomType` công khai (dòng 8–9) bỏ `totalRooms`; route admin (dòng 11–12, 33) trả `AdminRoomType` có `totalRooms` | Số phòng là tồn kho nội bộ của khách sạn: khách không cần để quyết định đặt (tìm kiếm đã lọc theo `rooms`), dễ bị đọc nhầm thành số phòng còn trống, và lộ quy mô khách sạn cho bất kỳ ai |
 | 2026-09-24 | Dòng 8 chỉ còn là tìm kiếm (F-006): `checkInDate`, `checkOutDate` bắt buộc, thêm `rooms`; bỏ `availableRooms` khỏi RoomType. Không còn danh sách loại phòng không kèm ngày; F-005 chỉ còn phần chi tiết (dòng 9) | Người dùng xem loại phòng là để chuẩn bị đặt, nên luôn có kỳ lưu trú; một danh sách không ngày không trả lời được câu "còn phòng không". Server tự so số phòng trống với `rooms`, nên client không phải tự so với `availableRooms`: luật "đủ phòng" chỉ nằm một chỗ, giống lúc đặt. Danh sách không ngày chuyển sang admin (F-005, dòng 33); chi tiết (dòng 9) vẫn công khai |
 | 2026-09-24 | Route chỉ admin chuyển xuống `/admin/...` (dòng 11–13, 18–19, 22–30); dòng 15–16 chỉ còn phần của user, phần admin tách thành dòng 31–32; export Excel (F-017) tách khỏi dòng 8 thành dòng 33 | Mỗi route một shape, service không rẽ nhánh theo role, một guard cho mỗi controller admin |
+| 2026-09-25 | Dòng 20 `PUT /booking-requests/:id/payment` (trả Payment) thành `POST /payment-sessions` với `bookingRequestId` trong body, trả link Stripe Checkout; thêm dòng 34 cho webhook của Stripe | Thanh toán thật đi qua trang của Stripe nên API chỉ mở link, còn việc ghi nhận tiền đến từ webhook có chữ ký. Mở link không phải transition của booking (`status` không đổi) mà tạo ra resource mới `payment_sessions`, nên nó là resource riêng thay vì sub-resource `/booking-requests/:id/...` |
+| 2026-09-25 | Dòng 20 luôn trả 201, kể cả khi trả lại link còn mở | Link mới hay cũ là chuyện của server; client chỉ cần một `url` còn dùng được |

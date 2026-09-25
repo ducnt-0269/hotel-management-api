@@ -11,7 +11,7 @@ headings, column names and identifiers; keep that split.
 ## Commands
 
 ```bash
-docker compose up -d          # Postgres 17 (:5432, hotel/hotel), Redis 8 (:6379), Mailpit (UI :8025)
+docker compose up -d          # Postgres 17 (:5432, hotel/hotel), Redis 8 (:6379), Mailpit (UI :8025), stripe-mock (:12111)
 cp .env.example .env          # local config; CI injects its own env (see .github/workflows/quality-gate.yml)
 
 npm run start:dev             # watch mode
@@ -32,6 +32,9 @@ npm run migration:generate -- src/database/migrations/CreateUsers      # then mi
 curl -s localhost:8025/api/v1/messages                            # what Mailpit received
 curl -s "localhost:8025/api/v1/search?query=to%3Aa@example.com"   # find one; /api/v1/message/{id} for the body
 curl -s localhost:8025/api/v1/message/{id}/html-check             # client-compatibility score
+
+docker compose --profile stripe up -d stripe-cli                  # forward sandbox Checkout events to the webhook (dev payments)
+docker compose logs stripe-cli                                    # its whsec_ goes in STRIPE_WEBHOOK_SECRET
 ```
 
 Node 24 (`.nvmrc`). CI (`Quality gate`) runs lint → format:check → build → unit → e2e on every push and PR.
@@ -89,6 +92,12 @@ lives in `src/auth/`, not `src/users/`. Injected properties are named after thei
   `layout` / `partials` are read from the mailer's **top-level** `options`, not `template.options`; and
   `mj-text` defaults to `padding: 10px 25px`, so buttons and dividers must repeat that 25px or they
   hang off the left edge of the copy.
+- **Payments** go through Stripe Checkout (hosted page; card data never reaches the API). `src/stripe/`
+  keeps every Stripe detail (`StripeCheckoutService`: open a session, verify a webhook signature over
+  the raw body — `rawBody: true` in both `main.ts` and the e2e app); `src/payment-sessions/` owns the
+  business. Only the signed webhook records a payment, never the browser's return. e2e and CI talk to
+  `stripe-mock` (`.env.test`), which answers with fixtures and sends no webhooks, so webhook specs sign
+  their own events; dev uses a real sandbox through the `stripe-cli` compose profile.
 - Errors use NestJS's default `{ statusCode, message, error }` shape — no custom filter.
 
 ## Documents: which ones are truth
@@ -124,8 +133,8 @@ Tables come in three kinds; the pattern repeats for booking requests, reviews an
 | Kind | Tables | Rule |
 | --- | --- | --- |
 | Resource | `users`, `room_types`, `amenities`, `room_type_amenities`, `user_email_verification_tokens` | Normal UPDATE allowed |
-| Long-term event | `booking_requests`, `reviews` | INSERT once; afterwards only `status` changes |
-| Outcome | `booking_request_{approvals,rejections,cancellations,expirations}`, `payments`, `review_{approvals,rejections}`, `user_{email_verifications,deactivations,reactivations}` | **INSERT-only**, one timestamp, no nullable column |
+| Long-term event | `booking_requests`, `reviews`, `payment_sessions` | INSERT once; afterwards only `status` changes |
+| Outcome | `booking_request_{approvals,rejections,cancellations,expirations}`, `payments`, `payment_session_expirations`, `review_{approvals,rejections}`, `user_{email_verifications,deactivations,reactivations}` | **INSERT-only**, one timestamp, no nullable column |
 
 `status` on the parent is a projection of its outcome tables. Every transition is one transaction in the
 service layer (no DB trigger):

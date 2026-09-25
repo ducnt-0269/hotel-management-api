@@ -13,13 +13,13 @@
 
 ## 1. Overview
 
-Schema gồm **17 bảng**, chia ba nhóm theo Immutable Data Model:
+Schema gồm **19 bảng**, chia ba nhóm theo Immutable Data Model:
 
 | Nhóm            | Bảng                                                                                                                                                                            | Tính chất                                           |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | Resource        | `users`, `room_types`, `amenities`, `room_type_amenities`, `user_email_verification_tokens`                                                                                     | Sửa được (UPDATE)                                   |
-| Long-term event | `booking_requests`, `reviews`                                                                                                                                                   | INSERT lúc tạo; sau đó chỉ cột `status` được UPDATE |
-| Outcome / log   | `booking_request_{approvals, rejections, cancellations, expirations}`, `payments`, `review_{approvals, rejections}`, `user_{email_verifications, deactivations, reactivations}` | **Chỉ INSERT**, một timestamp, không cột nullable   |
+| Long-term event | `booking_requests`, `reviews`, `payment_sessions`                                                                                                                               | INSERT lúc tạo; sau đó chỉ cột `status` được UPDATE |
+| Outcome / log   | `booking_request_{approvals, rejections, cancellations, expirations}`, `payments`, `payment_session_expirations`, `review_{approvals, rejections}`, `user_{email_verifications, deactivations, reactivations}` | **Chỉ INSERT**, một timestamp, không cột nullable   |
 
 Nguyên tắc bắt buộc:
 
@@ -45,6 +45,9 @@ erDiagram
     booking_requests ||--o| booking_request_rejections : ""
     booking_requests ||--o| booking_request_cancellations : ""
     booking_requests ||--o| booking_request_expirations : ""
+    booking_requests ||--o{ payment_sessions : ""
+    payment_sessions ||--o| payments : ""
+    payment_sessions ||--o| payment_session_expirations : ""
     booking_requests ||--o| payments : ""
     booking_requests ||--o| reviews : ""
     reviews ||--o| review_approvals : ""
@@ -128,6 +131,17 @@ Mọi bảng: `id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, mọi cột 
 | expires_at      | timestamptz |                                                                                    | App tính: `min(created_at + 24h, check_in_date 00:00 Asia/Saigon)` |
 | updated_at      | timestamptz | DEFAULT now()                                                                      | Cột dư có chủ ý — luôn bằng `created_at` của dòng outcome          |
 
+**payment_sessions** — một lần mở link Stripe Checkout cho một booking đã duyệt
+
+| Column             | Type         | Constraint                                                   | Note                                                                   |
+| ------------------ | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| booking_request_id | bigint       | FK → booking_requests                                        | Một booking có thể có nhiều session (link hết hạn thì mở link mới)     |
+| stripe_session_id  | varchar(255) | UNIQUE                                                       | `cs_…` — webhook tìm dòng qua cột này                                  |
+| url                | text         |                                                              | Link trang thanh toán của Stripe, trả lại khi session còn mở           |
+| amount             | bigint       | CHECK > 0                                                    | VND đã xin Stripe = `total_amount` lúc mở                              |
+| expires_at         | timestamptz  |                                                              | Stripe trả về (mặc định 24h)                                           |
+| status             | varchar(10)  | CHECK IN ('open','completed','expired') DEFAULT 'open'       | Projection của `payments` / `payment_session_expirations`             |
+
 **reviews**
 
 | Column             | Type        | Constraint                                                   | Note                                                    |
@@ -146,7 +160,8 @@ Mọi bảng: `id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, mọi cột 
 | booking_request_rejections    | booking_request_id, admin_user_id, reason text | booking_request_id UNIQUE                               | `reason` NOT NULL; không rỗng kiểm ở app                            |
 | booking_request_cancellations | booking_request_id                             | UNIQUE                                                  | Không actor — luôn là `booking_requests.user_id`                    |
 | booking_request_expirations   | booking_request_id                             | UNIQUE                                                  | Do cron ghi                                                         |
-| payments                      | booking_request_id, amount bigint              | booking_request_id UNIQUE                               | Mock: một dòng = đã trả; doanh thu (F-019/F-020) tính trên bảng này |
+| payments                      | payment_session_id, booking_request_id, amount bigint, paid_at | payment_session_id UNIQUE, booking_request_id UNIQUE | Tiền Stripe đã thu (`amount_total`); `paid_at` = lúc Stripe thu, doanh thu (F-019/F-020) tính theo cột này. `payment_sessions.status`: open → completed |
+| payment_session_expirations   | payment_session_id                             | UNIQUE                                                  | Link hết hạn chưa trả. `payment_sessions.status`: open → expired    |
 | review_approvals              | review_id, admin_user_id                       | review_id UNIQUE                                        |                                                                     |
 | review_rejections             | review_id, admin_user_id                       | review_id UNIQUE                                        | Sheet không bắt lý do                                               |
 | user_email_verifications      | user_id                                        | UNIQUE                                                  | `users.status`: unverified → active                                 |
@@ -165,7 +180,8 @@ Mọi bảng: `id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, mọi cột 
 | `booking_requests (expires_at) WHERE status = 'pending'`                                                | Cron hết hạn hold              | F-008 E-4      |
 | `booking_requests (created_at)`                                                                         | Thống kê theo tháng / quý      | F-018          |
 | `reviews (status) WHERE status = 'pending'`                                                             | Hàng đợi duyệt                 | F-014          |
-| `payments (created_at)`                                                                                 | Doanh thu theo kỳ              | F-019, F-020   |
+| `payments (paid_at)`                                                                                    | Doanh thu theo kỳ              | F-019, F-020   |
+| `payment_sessions (booking_request_id) UNIQUE WHERE status = 'open'`                                    | Tối đa một link sống mỗi booking: không trả tiền hai lần | F-012 |
 | `user_deactivations (user_id)`, `user_reactivations (user_id)`                                          | Lịch sử một user               | F-004          |
 | `admin_user_id` trên 6 bảng có admin                                                                    | FK                             |                |
 | `*_id` UNIQUE trên mọi bảng outcome                                                                     | Tối đa một dòng, kiêm index FK |                |
@@ -185,6 +201,11 @@ stateDiagram-v2
         [*] --> pending_r : INSERT reviews
         pending_r --> approved_r : review_approvals
         pending_r --> rejected_r : review_rejections
+    }
+    state "payment_sessions.status" as PS {
+        [*] --> open : INSERT payment_sessions
+        open --> completed : payments
+        open --> expired : payment_session_expirations
     }
     state "users.status" as US {
         [*] --> unverified : register
@@ -222,7 +243,8 @@ rồi mới INSERT. Ràng buộc thật ở tầng DB cho NFR-005 (trigger hay b
 | Token kích hoạt ở bảng riêng                                                       | Sau kích hoạt cột token/hạn sẽ NULL nếu để trên `users`                                                                                                                           |
 | `user_deactivations` / `user_reactivations` là log, không UNIQUE                   | Khoá / mở lặp nhiều lần; cờ `is_active` không nói ai và lúc nào                                                                                                                   |
 | `reviews` FK vào booking, không vào room_type                                      | "Chỉ review cái mình đã ở" thành ràng buộc cấu trúc                                                                                                                               |
-| `payments` một bảng, một dòng một booking                                          | Mock, không cổng thật, không đường hoàn tiền (không huỷ được request đã duyệt). Mở rộng sau: `status`, `provider`, `payment_failures`, `refunds`                                  |
+| Thanh toán qua Stripe Checkout: `payment_sessions` + hai outcome                   | Trang thanh toán của Stripe nên thẻ không qua server; webhook có chữ ký là nguồn sự thật duy nhất. Mỗi link là một long-term event với kết cục riêng, cùng khuôn với `booking_requests`. Chỉ nhận thẻ nên session chỉ kết thúc bằng completed hoặc expired. Không ghi lần thẻ bị từ chối, không đường hoàn tiền (không huỷ được request đã duyệt) |
+| Thanh toán không đổi `booking_requests.status`                                     | `approved` vẫn là trạng thái cuối; đã trả hay chưa đọc từ `payments`                                                                                                                |
 | Doanh thu tính trên `payments`, không trên `total_amount`                          | Tiền đã thu ≠ giá đã chốt                                                                                                                                                         |
 | Rule chính sách (1..5 phòng, ≤30 đêm, ≤12 tháng, giá > 0, reason không rỗng) ở app | Là số có thể đổi; DB chỉ giữ invariant (thứ tự ngày, enum, `>= 0`, NOT NULL)                                                                                                      |
 | `bigint` PK, không uuid                                                            | Khoá nội bộ; auth mới là hàng rào; nhất quán toàn schema                                                                                                                          |
@@ -246,3 +268,6 @@ rồi mới INSERT. Ràng buộc thật ở tầng DB cho NFR-005 (trigger hay b
 | 2026-09-22 | `users.email` lưu lower-case, UNIQUE đặt thẳng trên cột, thay cho unique index trên `lower(email)` | TypeORM `@Index` không diễn đạt được function index. Index viết tay trong migration còn tệ hơn: `RdbmsSchemaBuilder.dropOldIndices()` xoá mọi index của bảng mà entity metadata không biết, nên mỗi lần `migration:generate` sau này sẽ sinh một câu DROP cho nó. Chuẩn hoá lower-case lúc ghi và lúc tra cho ràng buộc tương đương, và TypeORM mô tả được trọn vẹn |
 | 2026-09-23 | Tạo booking khoá bằng row lock `SELECT … FROM room_types WHERE id = $1 FOR UPDATE` thay cho `pg_advisory_xact_lock(room_type_id)` | Cùng mức tuần tự hoá (một booking một lúc cho mỗi loại phòng) nhưng khoá chính dòng dữ liệu: mọi câu ghi vào dòng đó sau này (F-007 sửa `total_rooms`, xoá loại phòng) tự động phải chờ, không cần nhớ lấy chung một advisory lock; đọc dòng và khoá gộp một câu. Advisory lock được chọn lúc kiểm tra còn định nằm trong trigger — khi đã chuyển về service thì lý do đó không còn. e2e `never overbooks under concurrent requests` fail (4/5 request được nhận) khi bỏ khoá |
 | 2026-09-24 | Khoá / mở khoá user (`user_deactivations`, `user_reactivations`) đọc user, kiểm `status` trong code rồi mới `UPDATE users SET status` theo `id` — không có `AND status = <hiện tại>`, không kiểm `rowCount` | Chỉ admin làm, hai admin cùng bấm vào một user đúng một lúc gần như không xảy ra; đổi lại code đọc thẳng theo luật nghiệp vụ (404 → 409 → ghi). Race nếu có chỉ để lại hai dòng outcome cho một lần đổi, `status` vẫn đúng. Chấp nhận có chủ ý |
+| 2026-09-25 | Thanh toán thật qua Stripe Checkout thay cho `payments` mock: thêm long-term event `payment_sessions` (open → completed / expired) và outcome `payment_session_expirations`; `payments` thành outcome của `open → completed`, thêm `payment_session_id` | Bản mock (một dòng = đã trả) không có chỗ cho link thanh toán, hạn của nó hay chuyện khách bỏ dở. Một link là một sự kiện có kết cục riêng, nên dựng theo đúng khuôn IDM. Partial unique `(booking_request_id) WHERE status='open'` giữ tối đa một link sống, nên khách không trả được hai lần |
+| 2026-09-25 | `payments` có hai timestamp: `paid_at` (lúc Stripe thu, lấy từ event) và `created_at` (lúc webhook tới) — lệch với quy tắc "một timestamp" ở §1 | Webhook có thể tới trễ (app chết, Stripe retry); tính doanh thu theo `created_at` sẽ đẩy khoản thu cuối tháng sang tháng sau. `paid_at` là thuộc tính của lần thu tiền, NOT NULL; `created_at` giữ nghĩa như mọi bảng |
+| 2026-09-25 | Transition của `payment_sessions` chạy `UPDATE … WHERE status='open'` trước rồi mới INSERT outcome, cùng lý do dòng 2026-09-22 | Stripe có thể gửi một event hai lần, kể cả đồng thời: lần sau dừng ở guard (`affected = 0`) thay vì đâm vào UNIQUE của bảng outcome |
