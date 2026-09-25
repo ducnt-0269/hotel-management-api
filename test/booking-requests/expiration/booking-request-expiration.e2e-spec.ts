@@ -14,7 +14,7 @@ import {
   createUser,
   DEFAULT_PASSWORD,
 } from '../../support/factories/user.factory.js';
-import { clearMailbox, waitForMail } from '../../support/mailpit.js';
+import { clearMailbox, countMail, waitForMail } from '../../support/mailpit.js';
 import { resetDb } from '../../support/reset-db.js';
 
 import type { INestApplication } from '@nestjs/common';
@@ -98,6 +98,31 @@ describe('booking request hold expiry (e2e)', () => {
     expect(mail.Subject).toBe(`Yêu cầu đặt phòng #${overdue.id} đã hết hạn`);
     expect(mail.Text).toContain(roomType.name);
   });
+
+  it('expires and mails every overdue hold when there are more than one batch', async () => {
+    const user = await createUser(app);
+    const roomType = await createRoomType(app);
+    for (let i = 0; i < 101; i++) {
+      await createBookingRequest(app, {
+        user,
+        roomType,
+        checkInDate: day(10),
+        checkOutDate: day(12),
+        expiresAt: new Date(Date.now() - 60_000),
+      });
+    }
+
+    await app.get(BookingRequestExpirationService).expireOverdue();
+
+    expect(
+      await repository(BookingRequest).countBy({ status: 'expired' }),
+    ).toBe(101);
+    expect(await repository(BookingRequestExpiration).count()).toBe(101);
+    await vi.waitFor(
+      async () => expect(await countMail(user.email)).toBe(101),
+      { timeout: 15_000, interval: 200 },
+    );
+  }, 30_000);
 
   it('leaves holds that are not yet due, and decided requests, alone', async () => {
     const user = await createUser(app);
