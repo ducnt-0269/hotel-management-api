@@ -42,5 +42,37 @@ services:
       timeout: 3s
       retries: 10
 
+  # Stateless stand-in for the Stripe API that e2e talks to; it validates
+  # requests and answers with fixtures, but hosts no checkout page and sends
+  # no webhooks. Dev talks to a real Stripe sandbox instead.
+  stripe-mock:
+    image: stripe/stripe-mock:v0.203.0
+    container_name: hotel-stripe-mock
+    ports:
+      - '127.0.0.1:12111:12111'
+    healthcheck:
+      test: ['CMD', 'nc', '-z', 'localhost', '12111']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Forwards the sandbox's Checkout events to the app running on the host, so
+  # a payment made in dev reaches the webhook. Opt-in:
+  #   docker compose --profile stripe up -d stripe-cli
+  # Its signing secret (for STRIPE_WEBHOOK_SECRET) is in
+  #   docker compose logs stripe-cli
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: hotel-stripe-cli
+    profiles: [stripe]
+    environment:
+      STRIPE_API_KEY: ${STRIPE_SECRET_KEY:-}
+    command: >-
+      listen
+      --events checkout.session.completed,checkout.session.expired
+      --forward-to host.docker.internal:3000/api/payment-sessions/stripe-webhook
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
 volumes:
   pgdata:
