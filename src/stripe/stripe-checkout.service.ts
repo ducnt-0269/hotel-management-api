@@ -8,26 +8,16 @@ import { DateTime } from 'luxon';
 import Stripe from 'stripe';
 
 import { EnvService } from '../config/env.service.js';
+import {
+  CURRENCY,
+  PAYMENT_METHODS,
+  SINGLE_CHARGE_QUANTITY,
+} from './stripe-checkout.constants.js';
 
-// Integer VND throughout the app; zero-decimal for Stripe.
-const CURRENCY = 'vnd';
-// Cards settle at once, so a session only ever completes or expires.
-const PAYMENT_METHODS: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] =
-  ['card'];
-// One line; the amount already covers every room and night.
-const SINGLE_CHARGE_QUANTITY = 1;
-
-export interface CheckoutRequest {
-  amount: number;
-  description: string;
-  metadata: Record<string, string>;
-}
-
-export interface CheckoutSession {
-  id: string;
-  url: string;
-  expiresAt: Date;
-}
+import type {
+  CheckoutRequest,
+  CheckoutSession,
+} from './stripe-checkout.interfaces.js';
 
 // Keeps Stripe's request shapes and keys out of the callers.
 @Injectable()
