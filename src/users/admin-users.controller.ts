@@ -1,8 +1,9 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { AdminUsersService } from './admin-users.service.js';
 import {
@@ -18,6 +19,7 @@ import type { ListUsersQuery, UserResponse } from './schemas/user.schema.js';
 @ApiBearerAuth()
 @Roles('admin')
 @ApiErrorResponse(403, 'Forbidden')
+@ApiTags(API_TAGS.adminUsers)
 @Controller('admin/users')
 export class AdminUsersController {
   constructor(private readonly adminUsersService: AdminUsersService) {}

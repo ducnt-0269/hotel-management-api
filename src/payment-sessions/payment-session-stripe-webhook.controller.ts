@@ -1,7 +1,8 @@
 import { Controller, Headers, HttpCode, Post, Req } from '@nestjs/common';
-import { ApiExcludeController } from '@nestjs/swagger';
+import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../auth/decorators/public.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { PaymentSessionStripeWebhookService } from './payment-session-stripe-webhook.service.js';
 
 import type { RawBodyRequest } from '@nestjs/common';
@@ -10,6 +11,7 @@ import type { Request } from 'express';
 // Public, but only a signed event is acted on. A 5xx makes Stripe retry.
 @ApiExcludeController()
 @Public()
+@ApiTags(API_TAGS.paymentSessions)
 @Controller('payment-sessions/stripe-webhook')
 export class PaymentSessionStripeWebhookController {
   constructor(

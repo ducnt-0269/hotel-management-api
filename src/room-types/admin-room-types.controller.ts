@@ -9,10 +9,11 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiNoContentResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { AdminRoomTypesService } from './admin-room-types.service.js';
 import {
@@ -35,6 +36,7 @@ import type {
 @ApiBearerAuth()
 @Roles('admin')
 @ApiErrorResponse(403, 'Forbidden')
+@ApiTags(API_TAGS.adminRoomTypes)
 @Controller('admin/room-types')
 export class AdminRoomTypesController {
   constructor(private readonly adminRoomTypesService: AdminRoomTypesService) {}

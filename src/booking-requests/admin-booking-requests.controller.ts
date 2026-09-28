@@ -1,8 +1,9 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { AdminBookingRequestsService } from './admin-booking-requests.service.js';
 import {
@@ -21,6 +22,7 @@ import type {
 @ApiBearerAuth()
 @Roles('admin')
 @ApiErrorResponse(403, 'Forbidden')
+@ApiTags(API_TAGS.adminBookingRequests)
 @Controller('admin/booking-requests')
 export class AdminBookingRequestsController {
   constructor(

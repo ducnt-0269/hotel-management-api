@@ -1,9 +1,10 @@
 import { Controller, Param, Post } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../../common/api-docs/responds-with.decorator.js';
 import { userIdParamSchema } from '../schemas/user.schema.js';
 import { AdminUserReactivationService } from './admin-user-reactivation.service.js';
@@ -15,6 +16,7 @@ import type { UserReactivationResponse } from './schemas/user-reactivation.schem
 @ApiBearerAuth()
 @Roles('admin')
 @ApiErrorResponse(403, 'Forbidden')
+@ApiTags(API_TAGS.adminUsers)
 @Controller('admin/users/:id/reactivation')
 export class AdminUserReactivationController {
   constructor(

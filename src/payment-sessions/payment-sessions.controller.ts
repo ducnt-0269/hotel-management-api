@@ -1,9 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { PaymentSessionsService } from './payment-sessions.service.js';
 import {
@@ -20,6 +21,7 @@ import type {
 @ApiBearerAuth()
 @Roles('user')
 @ApiErrorResponse(403, 'Forbidden')
+@ApiTags(API_TAGS.paymentSessions)
 @Controller('payment-sessions')
 export class PaymentSessionsController {
   constructor(
