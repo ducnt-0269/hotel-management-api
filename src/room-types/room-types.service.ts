@@ -30,10 +30,7 @@ export class RoomTypesService {
   async list(query: ListRoomTypesQuery): Promise<Paginated<RoomTypeResponse>> {
     const roomTypes = await this.roomTypesRepository.find({
       select: roomTypeResponseColumns,
-      where: await roomTypesWithAllAmenities(
-        this.roomTypesRepository.manager,
-        query.amenities,
-      ),
+      where: roomTypesWithAllAmenities(query.amenities),
       relations: { amenityLinks: { amenity: true } },
       order: { id: 'ASC' },
     });

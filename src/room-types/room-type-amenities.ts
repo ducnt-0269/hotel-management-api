@@ -1,35 +1,40 @@
 import { BadRequestException } from '@nestjs/common';
-import { In } from 'typeorm';
+import { In, Raw } from 'typeorm';
 
 import { Amenity } from '../amenities/entities/amenity.entity.js';
 import { RoomTypeAmenity } from './entities/room-type-amenity.entity.js';
 
 import type { RoomType } from './entities/room-type.entity.js';
-import type { EntityManager, FindOptionsWhere } from 'typeorm';
+import type { EntityManager, FindOptionsWhere, FindOperator } from 'typeorm';
 
 // The `where` that keeps only room types carrying every code given (AND); no
-// codes, no filter. The ids come from a query of their own because
-// `findAndCount` clears GROUP BY before counting, so a HAVING filter on the
-// main query would report a wrong `meta.total`. No match is an empty `IN`,
-// which is how an unknown code returns nothing.
-export async function roomTypesWithAllAmenities(
-  manager: EntityManager,
+// codes, no filter. The subquery also works when an unknown code matches none.
+export function roomTypesWithAllAmenities(
   codes: string[],
-): Promise<FindOptionsWhere<RoomType>> {
-  if (codes.length === 0) return {};
+): FindOptionsWhere<RoomType> {
+  const id = roomTypeIdWithAllAmenities(codes);
+  return id ? { id } : {};
+}
 
-  const rows = await manager
-    .createQueryBuilder(RoomTypeAmenity, 'link')
-    .innerJoin('link.amenity', 'amenity')
-    .select('link.roomTypeId', 'id')
-    .where('amenity.code IN (:...codes)', { codes })
-    .groupBy('link.roomTypeId')
-    .having('COUNT(DISTINCT amenity.code) = :required', {
-      required: codes.length,
-    })
-    .getRawMany<{ id: string }>();
+// Keep the grouping inside a subquery: `findAndCount` clears GROUP BY on its
+// own query, and an ID array would grow with the number of matching rows.
+export function roomTypeIdWithAllAmenities(
+  codes: string[],
+): FindOperator<string> | undefined {
+  if (codes.length === 0) return undefined;
 
-  return { id: In(rows.map((row) => row.id)) };
+  return Raw(
+    (alias) =>
+      `${alias} IN (
+        SELECT link.room_type_id
+        FROM room_type_amenities link
+        JOIN amenities amenity ON amenity.id = link.amenity_id
+        WHERE amenity.code IN (:...amenityCodes)
+        GROUP BY link.room_type_id
+        HAVING COUNT(DISTINCT amenity.code) = :amenityCount
+      )`,
+    { amenityCodes: codes, amenityCount: codes.length },
+  );
 }
 
 // The catalogue rows for the codes an admin sent, or a 400 naming every code
