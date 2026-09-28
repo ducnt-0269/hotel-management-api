@@ -2,6 +2,21 @@ import { toAmenityResponse } from '../amenities/amenity.mapper.js';
 
 import type { RoomType } from './entities/room-type.entity.js';
 import type { RoomTypeResponse } from './schemas/room-type.schema.js';
+import type { FindOptionsSelect } from 'typeorm';
+
+// The columns `toRoomTypeResponse` reads, plus `totalRooms`: the public search
+// needs it for the availability count and the admin response returns it.
+// Inventory size stays out of the public response.
+export const roomTypeResponseColumns: FindOptionsSelect<RoomType> = {
+  id: true,
+  name: true,
+  description: true,
+  pricePerNight: true,
+  totalRooms: true,
+  createdAt: true,
+  updatedAt: true,
+  amenityLinks: { id: true, amenity: { id: true, code: true } },
+};
 
 // Needs `amenityLinks.amenity` loaded. bigint `id` and `pricePerNight` arrive
 // from the driver as strings; they leave as integers. Amenities are sorted:

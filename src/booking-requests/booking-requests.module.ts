@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { MailModule } from '../mail/mail.module.js';
+import { AdminBookingRequestsController } from './admin-booking-requests.controller.js';
+import { AdminBookingRequestsService } from './admin-booking-requests.service.js';
 import { AdminBookingRequestApprovalController } from './approval/admin-booking-request-approval.controller.js';
 import { AdminBookingRequestApprovalService } from './approval/admin-booking-request-approval.service.js';
 import { BookingRequestApproval } from './approval/entities/booking-request-approval.entity.js';
@@ -30,12 +32,14 @@ import { BookingRequestRejection } from './rejection/entities/booking-request-re
   ],
   controllers: [
     BookingRequestsController,
+    AdminBookingRequestsController,
     AdminBookingRequestApprovalController,
     AdminBookingRequestRejectionController,
     BookingRequestCancellationController,
   ],
   providers: [
     BookingRequestsService,
+    AdminBookingRequestsService,
     AdminBookingRequestApprovalService,
     AdminBookingRequestRejectionService,
     BookingRequestCancellationService,

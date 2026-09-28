@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { MAX_ROOM_TYPE_NAME_LENGTH } from '../room-type.constants.js';
 import { RoomTypeAmenity } from './room-type-amenity.entity.js';
 
 import type { Relation } from 'typeorm';
@@ -19,7 +20,11 @@ export class RoomType {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true })
+  @Column({
+    type: 'varchar',
+    length: MAX_ROOM_TYPE_NAME_LENGTH,
+    unique: true,
+  })
   name: string;
 
   @Column({ type: 'text' })

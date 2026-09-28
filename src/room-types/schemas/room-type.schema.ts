@@ -14,20 +14,22 @@ const timestamp = {
   examples: ['2026-09-22T04:08:46.495Z'],
 } as const;
 
+// Express 5's `simple` parser gives a bare string for one `?amenities=wifi`
+// and an array for the repeated form, so normalise to `string[]`. Empty
+// values drop out, which makes `?amenities=` mean "no filter".
+export const amenityCodesQuerySchema = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((value) => [
+    ...new Set([value ?? []].flat().filter((code) => code !== '')),
+  ])
+  .describe(
+    'Repeat per code. A room type must carry every code given (AND); a code the catalogue does not hold matches nothing.',
+  );
+
 export const listRoomTypesQuerySchema = paginationQuerySchema
   .extend({
-    // Express 5's `simple` parser gives a bare string for one `?amenities=wifi`
-    // and an array for the repeated form, so normalise to `string[]`. Empty
-    // values drop out, which makes `?amenities=` mean "no filter".
-    amenities: z
-      .union([z.string(), z.array(z.string())])
-      .optional()
-      .transform((value) => [
-        ...new Set([value ?? []].flat().filter((code) => code !== '')),
-      ])
-      .describe(
-        'Repeat per code. A room type must carry every code given (AND); a code the catalogue does not hold matches nothing.',
-      ),
+    amenities: amenityCodesQuerySchema,
     checkInDate: z.iso.date(),
     checkOutDate: z.iso
       .date()

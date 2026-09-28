@@ -2,7 +2,14 @@ import request from 'supertest';
 
 import { signIn } from '../support/auth.js';
 import { createTestApp } from '../support/create-test-app.js';
-import { createBookingRequest } from '../support/factories/booking-request.factory.js';
+import {
+  createBookingRequest,
+  createBookingRequestRejection,
+} from '../support/factories/booking-request.factory.js';
+import {
+  createPayment,
+  createPaymentSession,
+} from '../support/factories/payment-session.factory.js';
 import { createRoomType } from '../support/factories/room-type.factory.js';
 import {
   createUser,
@@ -51,6 +58,19 @@ describe('own booking requests (e2e)', () => {
   const book = (user: User, overrides: object = {}) =>
     createBookingRequest(app, { user, roomType, ...stay, ...overrides });
 
+  const bookAndPay = async (user: User, paidAt: Date) => {
+    const bookingRequest = await book(user, {
+      status: 'approved',
+      totalAmount: '3000000',
+    });
+    const paymentSession = await createPaymentSession(app, {
+      bookingRequest,
+      status: 'completed',
+    });
+    await createPayment(app, { paymentSession, paidAt });
+    return bookingRequest;
+  };
+
   describe('GET /booking-requests', () => {
     it('lists only their own requests, newest first', async () => {
       const first = await book(guest);
@@ -75,8 +95,38 @@ describe('own booking requests (e2e)', () => {
         status: 'pending',
         expiresAt: second.expiresAt.toISOString(),
         createdAt: second.createdAt.toISOString(),
+        payment: null,
+        rejection: null,
       });
       expect(res.body.data[0]).not.toHaveProperty('user');
+    });
+
+    it('shows the payment of a paid request and null for the rest', async () => {
+      const paidAt = new Date('2026-09-25T03:00:00.000Z');
+      await bookAndPay(guest, paidAt);
+      await book(guest, { status: 'approved', totalAmount: '3000000' });
+
+      const res = await get('', guestToken).expect(200);
+
+      expect(
+        res.body.data.map((item: { payment: unknown }) => item.payment),
+      ).toEqual([null, { amount: 3_000_000, paidAt: paidAt.toISOString() }]);
+    });
+
+    it('shows why and when a rejected request was refused', async () => {
+      const bookingRequest = await book(guest, { status: 'rejected' });
+      const rejection = await createBookingRequestRejection(app, {
+        bookingRequest,
+        admin,
+        reason: 'Hotel closed for maintenance',
+      });
+
+      const res = await get('', guestToken).expect(200);
+
+      expect(res.body.data[0].rejection).toEqual({
+        reason: 'Hotel closed for maintenance',
+        createdAt: rejection.createdAt.toISOString(),
+      });
     });
 
     it('pages the list', async () => {
@@ -139,6 +189,41 @@ describe('own booking requests (e2e)', () => {
 
       expect(res.body.id).toBe(Number(bookingRequest.id));
       expect(res.body).not.toHaveProperty('user');
+    });
+
+    it('shows what was paid and when', async () => {
+      const paidAt = new Date('2026-09-25T03:00:00.000Z');
+      const bookingRequest = await bookAndPay(guest, paidAt);
+
+      const res = await get(`/${bookingRequest.id}`, guestToken).expect(200);
+
+      expect(res.body.payment).toEqual({
+        amount: 3_000_000,
+        paidAt: paidAt.toISOString(),
+      });
+    });
+
+    it('shows the rejection of a rejected request', async () => {
+      const bookingRequest = await book(guest, { status: 'rejected' });
+      await createBookingRequestRejection(app, {
+        bookingRequest,
+        admin,
+        reason: 'Hotel closed for maintenance',
+      });
+
+      const res = await get(`/${bookingRequest.id}`, guestToken).expect(200);
+
+      expect(res.body.rejection).toMatchObject({
+        reason: 'Hotel closed for maintenance',
+      });
+    });
+
+    it('shows no payment for an approved request not yet paid', async () => {
+      const bookingRequest = await book(guest, { status: 'approved' });
+
+      const res = await get(`/${bookingRequest.id}`, guestToken).expect(200);
+
+      expect(res.body.payment).toBeNull();
     });
 
     it('hides another guest’s request behind a 404', async () => {
