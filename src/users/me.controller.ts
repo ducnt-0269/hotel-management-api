@@ -1,8 +1,9 @@
 import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
-import { ApiBearerAuth, ApiNoContentResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import {
   changePasswordBodySchema,
@@ -20,6 +21,7 @@ import type {
 } from './schemas/user.schema.js';
 
 @ApiBearerAuth()
+@ApiTags(API_TAGS.me)
 @Controller('me')
 export class MeController {
   constructor(private readonly usersService: UsersService) {}

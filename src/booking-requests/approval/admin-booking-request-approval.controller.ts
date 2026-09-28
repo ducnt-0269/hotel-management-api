@@ -1,9 +1,10 @@
 import { Controller, Param, Post } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../../common/api-docs/responds-with.decorator.js';
 import { bookingRequestIdParamSchema } from '../schemas/booking-request.schema.js';
 import { AdminBookingRequestApprovalService } from './admin-booking-request-approval.service.js';
@@ -15,6 +16,7 @@ import type { BookingRequestApprovalResponse } from './schemas/booking-request-a
 @ApiBearerAuth()
 @Roles('admin')
 @ApiErrorResponse(403, 'Forbidden')
+@ApiTags(API_TAGS.adminBookingRequests)
 @Controller('admin/booking-requests/:id/approval')
 export class AdminBookingRequestApprovalController {
   constructor(

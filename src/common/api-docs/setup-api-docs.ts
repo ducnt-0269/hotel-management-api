@@ -1,6 +1,7 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 
+import { API_TAG_GROUPS } from './api-tags.constants.js';
 import { addStandardErrorResponses } from './standard-error-responses.js';
 
 import type { INestApplication } from '@nestjs/common';
@@ -15,5 +16,12 @@ export function setupApiDocs(app: INestApplication) {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   addStandardErrorResponses(document);
-  app.use('/api/docs', apiReference({ content: document }));
+  // `persistAuth` keeps the bearer token in localStorage across reloads.
+  app.use(
+    '/api/docs',
+    apiReference({
+      content: { ...document, 'x-tagGroups': API_TAG_GROUPS },
+      persistAuth: true,
+    }),
+  );
 }

@@ -1,8 +1,9 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiNoContentResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 import { I18nLang } from 'nestjs-i18n';
 
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { userResponseSchema } from '../users/schemas/user.schema.js';
 import { AccountActivationService } from './account-activation.service.js';
@@ -18,6 +19,7 @@ import {
 import type { UserResponse } from '../users/schemas/user.schema.js';
 import type { LoginBody, RegisterBody } from './schemas/auth.schema.js';
 
+@ApiTags(API_TAGS.auth)
 @Controller('auth')
 export class AuthController {
   constructor(

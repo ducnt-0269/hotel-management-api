@@ -1,6 +1,8 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../auth/decorators/public.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { paginationQuerySchema } from '../common/pagination/pagination.schema.js';
 import { AmenitiesService } from './amenities.service.js';
@@ -10,6 +12,7 @@ import type { Paginated } from '../common/pagination/paginate.js';
 import type { PaginationQuery } from '../common/pagination/pagination.schema.js';
 import type { AmenityResponse } from './schemas/amenity.schema.js';
 
+@ApiTags(API_TAGS.amenities)
 @Controller('amenities')
 export class AmenitiesController {
   constructor(private readonly amenitiesService: AmenitiesService) {}

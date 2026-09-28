@@ -1,7 +1,9 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 import { Public } from '../auth/decorators/public.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
+import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { RoomTypesService } from './room-types.service.js';
 import {
@@ -19,6 +21,7 @@ import type {
 
 // `@Public()` sits per method, not on the class: there is no `@Public(false)`,
 // so a class-level mark would quietly make the later admin routes public.
+@ApiTags(API_TAGS.roomTypes)
 @Controller('room-types')
 export class RoomTypesController {
   constructor(private readonly roomTypesService: RoomTypesService) {}
