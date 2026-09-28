@@ -1,0 +1,14 @@
+{
+  "roomTypes": {
+    "sheetName": "Loại phòng",
+    "columns": {
+      "id": "ID",
+      "name": "Tên",
+      "description": "Mô tả",
+      "pricePerNight": "Giá mỗi đêm (VND)",
+      "totalRooms": "Tổng số phòng",
+      "amenities": "Tiện nghi",
+      "updatedAt": "Cập nhật lúc"
+    }
+  }
+}

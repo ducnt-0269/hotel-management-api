@@ -42,6 +42,7 @@
     "@scalar/nestjs-api-reference": "^1.2.19",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.3.7",
+    "exceljs": "^4.4.0",
     "ioredis": "^5.11.1",
     "luxon": "^3.7.2",
     "nest-commander": "^3.21.0",

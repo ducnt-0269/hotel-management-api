@@ -6,6 +6,7 @@ const REASON: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
+  422: 'Unprocessable Entity',
   502: 'Bad Gateway',
 };
 
