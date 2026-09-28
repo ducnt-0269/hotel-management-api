@@ -87,6 +87,8 @@ describe('booking requests (e2e)', () => {
         status: 'pending',
         expiresAt: expect.any(String),
         createdAt: expect.any(String),
+        payment: null,
+        rejection: null,
       });
       // Check-in is days away, so the hold lasts 24 hours from sending.
       const expiresIn = Date.parse(body.expiresAt) - before;

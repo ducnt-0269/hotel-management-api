@@ -7,7 +7,7 @@ import {
 import { MAX_ROOMS_PER_REQUEST } from '../booking-request.constants.js';
 import { refineStayDates } from './stay-dates.schema.js';
 
-const bookingRequestStatusSchema = z.enum([
+export const bookingRequestStatusSchema = z.enum([
   'pending',
   'approved',
   'rejected',
@@ -16,7 +16,7 @@ const bookingRequestStatusSchema = z.enum([
 ]);
 
 // Capped so an absurd id is a 400 here, not a numeric overflow in Postgres.
-const idSchema = z.coerce
+export const idSchema = z.coerce
   .number()
   .int()
   .positive()
@@ -56,6 +56,20 @@ export const bookingRequestResponseSchema = z.object({
   status: bookingRequestStatusSchema,
   expiresAt: z.date().meta(timestamp),
   createdAt: z.date().meta(timestamp),
+  payment: z
+    .object({
+      amount: z.number().int(),
+      paidAt: z.date().meta(timestamp),
+    })
+    .nullable()
+    .describe('What Stripe took and when; null until the request is paid'),
+  rejection: z
+    .object({
+      reason: z.string(),
+      createdAt: z.date().meta(timestamp),
+    })
+    .nullable()
+    .describe('Why and when an admin refused it; null unless rejected'),
 });
 
 export const bookingRequestListResponseSchema = paginatedSchema(

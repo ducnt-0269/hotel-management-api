@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 
 import { HOLD_HOURS } from '../../../src/booking-requests/booking-request.constants.js';
 import { BookingRequest } from '../../../src/booking-requests/entities/booking-request.entity.js';
+import { BookingRequestRejection } from '../../../src/booking-requests/rejection/entities/booking-request-rejection.entity.js';
 
 import type { BookingRequestStatus } from '../../../src/booking-requests/entities/booking-request.entity.js';
 import type { RoomType } from '../../../src/room-types/entities/room-type.entity.js';
@@ -41,4 +42,19 @@ export async function createBookingRequest(
         new Date(Date.now() + HOLD_HOURS * 60 * 60 * 1000),
     }),
   );
+}
+
+// The request passed in should already be rejected.
+export async function createBookingRequestRejection(
+  app: INestApplication,
+  attributes: { bookingRequest: BookingRequest; admin: User; reason?: string },
+): Promise<BookingRequestRejection> {
+  return app
+    .get(DataSource)
+    .getRepository(BookingRequestRejection)
+    .save({
+      bookingRequestId: attributes.bookingRequest.id,
+      adminUserId: attributes.admin.id,
+      reason: attributes.reason ?? 'Hotel closed for maintenance',
+    });
 }

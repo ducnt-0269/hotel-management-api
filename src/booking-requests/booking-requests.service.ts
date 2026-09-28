@@ -10,7 +10,11 @@ import { paginate, toSkipTake } from '../common/pagination/paginate.js';
 import { RoomType } from '../room-types/entities/room-type.entity.js';
 import { availableRoomsPerNightByRoomType } from './booking-request-availability.js';
 import { holdExpiry, stayNights } from './booking-request-dates.js';
-import { toBookingRequestResponse } from './booking-request.mapper.js';
+import { findBookingRequestOutcomes } from './booking-request-outcomes.js';
+import {
+  bookingRequestResponseColumns,
+  toBookingRequestResponse,
+} from './booking-request.mapper.js';
 import { BookingRequest } from './entities/booking-request.entity.js';
 
 import type { Paginated } from '../common/pagination/paginate.js';
@@ -20,20 +24,6 @@ import type {
   CreateBookingRequestBody,
   ListOwnBookingRequestsQuery,
 } from './schemas/booking-request.schema.js';
-import type { FindOptionsSelect } from 'typeorm';
-
-// Exactly the columns `toBookingRequestResponse` reads.
-const bookingRequestResponseColumns: FindOptionsSelect<BookingRequest> = {
-  id: true,
-  roomsRequested: true,
-  checkInDate: true,
-  checkOutDate: true,
-  totalAmount: true,
-  status: true,
-  expiresAt: true,
-  createdAt: true,
-  roomType: { id: true, name: true },
-};
 
 @Injectable()
 export class BookingRequestsService {
@@ -59,8 +49,14 @@ export class BookingRequestsService {
       order: { createdAt: 'DESC', id: 'DESC' },
       ...toSkipTake(query),
     });
+    const [payments, rejections] = await findBookingRequestOutcomes(
+      this.dataSource.manager,
+      rows.map((row) => row.id),
+    );
     return paginate(
-      rows.map((row) => toBookingRequestResponse(row, row.roomType)),
+      rows.map((row) =>
+        toBookingRequestResponse(row, row.roomType, payments, rejections),
+      ),
       total,
       query,
     );
@@ -76,7 +72,16 @@ export class BookingRequestsService {
     if (!bookingRequest) {
       throw new NotFoundException('Booking request not found');
     }
-    return toBookingRequestResponse(bookingRequest, bookingRequest.roomType);
+    const [payments, rejections] = await findBookingRequestOutcomes(
+      this.dataSource.manager,
+      [bookingRequest.id],
+    );
+    return toBookingRequestResponse(
+      bookingRequest,
+      bookingRequest.roomType,
+      payments,
+      rejections,
+    );
   }
 
   async create(
@@ -106,7 +111,8 @@ export class BookingRequestsService {
         expiresAt: holdExpiry(new Date(), body.checkInDate),
       });
 
-      return toBookingRequestResponse(bookingRequest, roomType);
+      // A new request is still pending: not paid, not rejected.
+      return toBookingRequestResponse(bookingRequest, roomType, [], []);
     });
   }
 
