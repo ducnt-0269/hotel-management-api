@@ -256,7 +256,7 @@ rồi mới INSERT. Ràng buộc thật ở tầng DB cho NFR-005 (trigger hay b
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
 | 1   | Cơ chế chặn capacity ở tầng DB (NFR-005). **2026-09-21: tạm hoãn** — đi advisory lock (`pg_advisory_xact_lock(room_type_id)`) + kiểm tra trong transaction ở service. **2026-09-23**: khoá đổi thành row lock trên `room_types`, xem §8; thêm ràng buộc thật ở DB (bảng `room_type_daily_inventory`) chỉ khi còn thời gian. Schema hiện tại không đổi | Dev   |
 | 2   | ~~TypeORM `^1.1.1` với `"type": "module"`~~ **Đã xác nhận 2026-09-21** bằng spike: `@Check`, `@Index({ where })` sinh SQL đúng; `migration:generate` / `run` / `revert` chạy qua `dist/database/data-source.js` (ESM, không cần ts-node). Script: `npm run migration:*` | Dev   |
-| 3   | Giảm `total_rooms` xuống dưới số đang giữ (F-007 / F-011) — câu hỏi treo từ `ba-memory.md`                                                                                            | BA    |
+| 3   | ~~Giảm `total_rooms` xuống dưới số đang giữ (F-007 / F-011)~~ **Đã chốt 2026-09-28**: không cho — `PATCH /admin/room-types/:id` khoá dòng `room_types` (`FOR UPDATE`, cùng khoá với lúc tạo booking), tính số phòng đang giữ từng đêm từ hôm nay; đêm nào vượt `total_rooms` mới → 409. Hạ về 0 cũng theo luật này. Schema không đổi | BA    |
 
 ## 8. Deviations
 
