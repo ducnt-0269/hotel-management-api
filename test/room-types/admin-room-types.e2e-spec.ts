@@ -47,6 +47,7 @@ describe('admin room types (e2e)', () => {
     const roomType = await createRoomType(app);
     const routes = [
       () => http().get('/api/admin/room-types'),
+      () => http().get('/api/admin/room-types/export'),
       () => http().post('/api/admin/room-types').send(validBody),
       () => http().patch(`/api/admin/room-types/${roomType.id}`).send({}),
       () => http().delete(`/api/admin/room-types/${roomType.id}`),

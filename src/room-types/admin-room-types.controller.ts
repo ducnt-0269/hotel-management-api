@@ -8,15 +8,26 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { I18nLang } from 'nestjs-i18n';
 
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
 import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
+import { xlsxDownload } from '../common/xlsx/xlsx-file.js';
+import { XLSX_CONTENT_TYPE } from '../common/xlsx/xlsx.constants.js';
+import { AdminRoomTypeExportService } from './admin-room-type-export.service.js';
 import { AdminRoomTypesService } from './admin-room-types.service.js';
 import {
+  adminRoomTypeFilterSchema,
   adminRoomTypeListResponseSchema,
   adminRoomTypeResponseSchema,
   createRoomTypeBodySchema,
@@ -27,6 +38,7 @@ import { roomTypeIdParamSchema } from './schemas/room-type.schema.js';
 
 import type { Paginated } from '../common/pagination/paginate.js';
 import type {
+  AdminRoomTypeFilter,
   AdminRoomTypeResponse,
   CreateRoomTypeBody,
   ListAdminRoomTypesQuery,
@@ -39,7 +51,10 @@ import type {
 @ApiTags(API_TAGS.adminRoomTypes)
 @Controller('admin/room-types')
 export class AdminRoomTypesController {
-  constructor(private readonly adminRoomTypesService: AdminRoomTypesService) {}
+  constructor(
+    private readonly adminRoomTypesService: AdminRoomTypesService,
+    private readonly adminRoomTypeExportService: AdminRoomTypeExportService,
+  ) {}
 
   @Get()
   @RespondsWith(adminRoomTypeListResponseSchema, {
@@ -51,6 +66,25 @@ export class AdminRoomTypesController {
     query: ListAdminRoomTypesQuery,
   ): Promise<Paginated<AdminRoomTypeResponse>> {
     return this.adminRoomTypesService.list(query);
+  }
+
+  @Get('export')
+  @ApiResponse({
+    status: 200,
+    description:
+      'Every room type matching the list filters, as one .xlsx sheet; column headers follow Accept-Language',
+    content: {
+      [XLSX_CONTENT_TYPE]: { schema: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiErrorResponse(422, 'Too many room types to export; narrow the filters')
+  async export(
+    @Query({ schema: adminRoomTypeFilterSchema }) filter: AdminRoomTypeFilter,
+    @I18nLang() lang: string,
+  ): Promise<StreamableFile> {
+    return xlsxDownload(
+      await this.adminRoomTypeExportService.export(filter, lang),
+    );
   }
 
   @Post()

@@ -1,0 +1,14 @@
+{
+  "roomTypes": {
+    "sheetName": "Room types",
+    "columns": {
+      "id": "ID",
+      "name": "Name",
+      "description": "Description",
+      "pricePerNight": "Price per night (VND)",
+      "totalRooms": "Total rooms",
+      "amenities": "Amenities",
+      "updatedAt": "Updated at"
+    }
+  }
+}

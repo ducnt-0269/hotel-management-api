@@ -24,6 +24,12 @@ export const listAdminRoomTypesQuerySchema = paginationQuerySchema.extend({
     .describe('Case-insensitive substring of the name'),
 });
 
+// The list's filters without paging: the export takes every matching row.
+export const adminRoomTypeFilterSchema = listAdminRoomTypesQuerySchema.omit({
+  page: true,
+  perPage: true,
+});
+
 const amenityCodesBodySchema = z
   .array(z.string())
   .transform((codes) => [...new Set(codes)])
@@ -60,6 +66,8 @@ export const adminRoomTypeResponseSchema = roomTypeResponseSchema.extend({
 export const adminRoomTypeListResponseSchema = paginatedSchema(
   adminRoomTypeResponseSchema,
 );
+
+export type AdminRoomTypeFilter = z.infer<typeof adminRoomTypeFilterSchema>;
 
 export type ListAdminRoomTypesQuery = z.infer<
   typeof listAdminRoomTypesQuerySchema
