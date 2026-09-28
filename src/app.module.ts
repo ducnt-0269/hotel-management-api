@@ -14,6 +14,7 @@ import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { PaymentSessionsModule } from './payment-sessions/payment-sessions.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 import { RoomTypesModule } from './room-types/room-types.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -37,6 +38,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
     RoomTypesModule,
     BookingRequestsModule,
     PaymentSessionsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}

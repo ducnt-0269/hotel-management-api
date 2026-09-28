@@ -2,6 +2,11 @@ import { DateTime } from 'luxon';
 
 import { HOLD_HOURS, HOTEL_TIME_ZONE } from './booking-request.constants.js';
 
+// Today's date (YYYY-MM-DD) at the hotel.
+export function hotelToday(): string {
+  return DateTime.now().setZone(HOTEL_TIME_ZONE).toISODate()!;
+}
+
 export function stayNights(checkInDate: string, checkOutDate: string): number {
   const checkIn = DateTime.fromISO(checkInDate, { zone: HOTEL_TIME_ZONE });
   const checkOut = DateTime.fromISO(checkOutDate, { zone: HOTEL_TIME_ZONE });
