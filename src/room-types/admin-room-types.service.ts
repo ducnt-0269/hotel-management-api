@@ -7,20 +7,16 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
 import { paginate, toSkipTake } from '../common/pagination/paginate.js';
-import { containsText } from '../common/query/find-operators.js';
 import { isForeignKeyViolation } from '../database/is-foreign-key-violation.js';
 import { isUniqueViolation } from '../database/is-unique-violation.js';
+import { adminRoomTypeWhere } from './admin-room-type-filter.js';
 import {
   toAdminRoomTypeResponse,
   toRoomTypeColumns,
 } from './admin-room-type.mapper.js';
 import { RoomTypeAmenity } from './entities/room-type-amenity.entity.js';
 import { RoomType } from './entities/room-type.entity.js';
-import {
-  findAmenitiesOrFail,
-  linkAmenities,
-  roomTypesWithAllAmenities,
-} from './room-type-amenities.js';
+import { findAmenitiesOrFail, linkAmenities } from './room-type-amenities.js';
 import { ensureNoOverheldNight } from './room-type-capacity.js';
 import { roomTypeResponseColumns } from './room-type.mapper.js';
 
@@ -46,13 +42,7 @@ export class AdminRoomTypesService {
   ): Promise<Paginated<AdminRoomTypeResponse>> {
     const [roomTypes, total] = await this.roomTypesRepository.findAndCount({
       select: roomTypeResponseColumns,
-      where: {
-        ...(await roomTypesWithAllAmenities(
-          this.dataSource.manager,
-          query.amenities,
-        )),
-        ...(query.q && { name: containsText(query.q) }),
-      },
+      where: adminRoomTypeWhere(query),
       relations: { amenityLinks: { amenity: true } },
       order: { id: 'ASC' },
       ...toSkipTake(query),
