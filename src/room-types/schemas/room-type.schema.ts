@@ -3,16 +3,11 @@ import { z } from 'zod';
 import { amenityResponseSchema } from '../../amenities/schemas/amenity.schema.js';
 import { MAX_ROOMS_PER_REQUEST } from '../../booking-requests/booking-request.constants.js';
 import { refineStayDates } from '../../booking-requests/schemas/stay-dates.schema.js';
+import { timestampSchema } from '../../common/api-docs/timestamp.schema.js';
 import {
   paginatedSchema,
   paginationQuerySchema,
 } from '../../common/pagination/pagination.schema.js';
-
-const timestamp = {
-  type: 'string',
-  format: 'date-time',
-  examples: ['2026-09-22T04:08:46.495Z'],
-} as const;
 
 // Express 5's `simple` parser gives a bare string for one `?amenities=wifi`
 // and an array for the repeated form, so normalise to `string[]`. Empty
@@ -60,8 +55,8 @@ export const roomTypeResponseSchema = z.object({
   description: z.string(),
   pricePerNight: z.number().int(),
   amenities: z.array(amenityResponseSchema),
-  createdAt: z.date().meta(timestamp),
-  updatedAt: z.date().meta(timestamp),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
 });
 
 export const roomTypeListResponseSchema = paginatedSchema(

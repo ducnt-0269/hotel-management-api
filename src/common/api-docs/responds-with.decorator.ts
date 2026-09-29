@@ -19,8 +19,8 @@ interface ResponseOptions {
 // advertising a shape the serializer does not actually produce.
 //
 // `io: 'output'` describes what leaves the API (after coercion), and
-// `unrepresentable: 'any'` stops `z.date()` from throwing — date fields carry
-// their own `.meta({ type: 'string', format: 'date-time' })` instead.
+// `unrepresentable: 'any'` stops `z.date()` from throwing — date fields use
+// `timestampSchema`, whose meta describes them instead.
 export function RespondsWith(
   schema: ZodType,
   { status, description }: ResponseOptions,
