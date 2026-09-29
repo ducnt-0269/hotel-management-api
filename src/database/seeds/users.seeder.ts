@@ -2,78 +2,13 @@ import { UserEmailVerification } from '../../auth/entities/user-email-verificati
 import { hashPassword } from '../../common/security/password.js';
 import { UserDeactivation } from '../../users/deactivation/entities/user-deactivation.entity.js';
 import { User } from '../../users/entities/user.entity.js';
+import { USERS } from './users.seed-data.js';
 
-import type { UserRole, UserStatus } from '../../users/entities/user.entity.js';
+import type { UserSeed } from './users.seed-data.js';
 import type { DataSource, EntityManager } from 'typeorm';
 
 // Local and demo only: every seeded account shares this password.
 const SEED_PASSWORD = 'Password123';
-
-interface UserSeed {
-  email: string;
-  fullName: string;
-  role: UserRole;
-  status: UserStatus;
-}
-
-// Demo data, meant to be edited. The admin comes first: it is the actor
-// recorded on the seeded deactivation.
-const USERS: UserSeed[] = [
-  {
-    email: 'admin@hotel.local',
-    fullName: 'Quản Trị Viên',
-    role: 'admin',
-    status: 'active',
-  },
-  {
-    email: 'an.nguyen@example.com',
-    fullName: 'Nguyễn Văn An',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'binh.tran@example.com',
-    fullName: 'Trần Thị Bình',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'cuong.le@example.com',
-    fullName: 'Lê Minh Cường',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'dung.pham@example.com',
-    fullName: 'Phạm Thu Dung',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'em.hoang@example.com',
-    fullName: 'Hoàng Gia Em',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'giang.vu@example.com',
-    fullName: 'Vũ Hương Giang',
-    role: 'user',
-    status: 'unverified',
-  },
-  {
-    email: 'hai.do@example.com',
-    fullName: 'Đỗ Thanh Hải',
-    role: 'user',
-    status: 'unverified',
-  },
-  {
-    email: 'khanh.bui@example.com',
-    fullName: 'Bùi Quốc Khánh',
-    role: 'user',
-    status: 'deactivated',
-  },
-];
 
 // Writes the user with its final status plus the outcome rows that status is
 // a projection of, so a seeded account looks exactly like one that went
