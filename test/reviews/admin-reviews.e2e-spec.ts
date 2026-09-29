@@ -70,18 +70,22 @@ describe('admin reviews (e2e)', () => {
       reason,
     });
 
-  it('defaults to the pending queue', async () => {
+  it('returns reviews of every status without a filter', async () => {
     const pending = await stageReview({ status: 'pending' });
-    await stageReview({ status: 'approved' });
-    await stageRejectedReview();
+    const approved = await stageReview({ status: 'approved' });
+    const rejected = await stageRejectedReview();
 
     const res = await get().expect(200);
 
-    expect(ids(res.body)).toEqual([Number(pending.id)]);
+    const expected = [pending, approved, rejected].map((review) =>
+      Number(review.id),
+    );
+    expect(ids(res.body)).toHaveLength(expected.length);
+    expect(ids(res.body)).toEqual(expect.arrayContaining(expected));
   });
 
-  it('filters by an explicit status', async () => {
-    await stageReview({ status: 'pending' });
+  it('filters by status', async () => {
+    const pending = await stageReview({ status: 'pending' });
     const approved = await stageReview({ status: 'approved' });
     const rejected = await stageRejectedReview();
 
@@ -90,9 +94,12 @@ describe('admin reviews (e2e)', () => {
 
     const rejectedRes = await get('?status=rejected').expect(200);
     expect(ids(rejectedRes.body)).toEqual([Number(rejected.id)]);
+
+    const pendingRes = await get('?status=pending').expect(200);
+    expect(ids(pendingRes.body)).toEqual([Number(pending.id)]);
   });
 
-  it('orders the queue oldest first', async () => {
+  it('lists newest first', async () => {
     const older = await stageReview({
       status: 'pending',
       createdAt: new Date('2026-01-10T00:00:00Z'),
@@ -104,11 +111,11 @@ describe('admin reviews (e2e)', () => {
 
     const res = await get().expect(200);
 
-    expect(ids(res.body)).toEqual([Number(older.id), Number(newer.id)]);
+    expect(ids(res.body)).toEqual([Number(newer.id), Number(older.id)]);
   });
 
-  it('pages the queue', async () => {
-    const oldest = await stageReview({
+  it('pages the list', async () => {
+    await stageReview({
       status: 'pending',
       createdAt: new Date('2026-01-10T00:00:00Z'),
     });
@@ -116,7 +123,7 @@ describe('admin reviews (e2e)', () => {
       status: 'pending',
       createdAt: new Date('2026-01-11T00:00:00Z'),
     });
-    await stageReview({
+    const newest = await stageReview({
       status: 'pending',
       createdAt: new Date('2026-01-12T00:00:00Z'),
     });
@@ -124,7 +131,7 @@ describe('admin reviews (e2e)', () => {
     const res = await get('?page=1&perPage=1').expect(200);
 
     expect(res.body.meta).toEqual({ total: 3, page: 1, perPage: 1 });
-    expect(ids(res.body)).toEqual([Number(oldest.id)]);
+    expect(ids(res.body)).toEqual([Number(newest.id)]);
   });
 
   it('includes the guest who left each review', async () => {
