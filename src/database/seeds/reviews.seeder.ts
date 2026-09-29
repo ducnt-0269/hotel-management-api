@@ -10,26 +10,58 @@ import { ReviewApproval } from '../../reviews/approval/entities/review-approval.
 import { Review } from '../../reviews/entities/review.entity.js';
 import { ReviewRejection } from '../../reviews/rejection/entities/review-rejection.entity.js';
 import { User } from '../../users/entities/user.entity.js';
-import {
-  FAKER_SEED,
-  RATING_WEIGHTS,
-  REVIEW_COMMENTS,
-  REVIEW_REJECTION_REASONS,
-  REVIEW_SHARE,
-  REVIEW_STATUS_WEIGHTS,
-} from './review-seed.constants.js';
-import { randomInstantBetween } from './seed-random-time.js';
 
 import type { ReviewStatus } from '../../reviews/entities/review.entity.js';
+import type { DurationLike } from 'luxon';
 import type { DataSource, EntityManager } from 'typeorm';
+
+// Reproducible demo data, like the booking requests it reviews. A different
+// seed from theirs, so the two draws do not mirror each other.
+const FAKER_SEED = 20260930;
+
+// Share of paid, ended stays that end up with a review at all.
+const REVIEW_SHARE = 0.6;
+
+// A guest reviews within this many days of checking out; the admin
+// moderates a day later. Both stay in the past.
+const REVIEWED_WITHIN_DAYS = 10;
+const MODERATED_AFTER: DurationLike = { days: 1 };
+
+// Most demo reviews are already moderated so admin lists show history; a
+// few stay pending to exercise the moderation queue.
+const REVIEW_STATUS_WEIGHTS = [
+  { value: 'approved', weight: 0.7 },
+  { value: 'rejected', weight: 0.15 },
+  { value: 'pending', weight: 0.15 },
+] as const;
+
+// Guest ratings skew positive, as real hotel reviews tend to.
+const RATING_WEIGHTS = [
+  { value: 3, weight: 0.1 },
+  { value: 4, weight: 0.35 },
+  { value: 5, weight: 0.55 },
+] as const;
+
+const REVIEW_COMMENTS = [
+  'Clean room, friendly staff — would book again.',
+  'Great location and breakfast, though the room was a bit noisy at night.',
+  'Comfortable bed and the view matched the photos on the website.',
+  'Fast check-in, good value for the price.',
+  'Spacious and quiet, exactly what we needed for a short trip.',
+] as const;
+
+const REVIEW_REJECTION_REASONS = [
+  'Comment contains unrelated promotional content',
+  'Content violates the review guidelines',
+  'Unable to verify the guest actually stayed at the hotel',
+] as const;
 
 type EligibleStay = Pick<BookingRequest, 'id' | 'checkOutDate'>;
 
-// Guarded on the whole table, not per row: this seeder only ever runs once
-// against an empty database, and a second run must change nothing.
+// Guarded on the whole table: it runs once against an empty database, in a
+// single transaction, so a failed run leaves nothing behind to skip over.
 export async function seedReviews(dataSource: DataSource): Promise<void> {
-  const reviews = dataSource.getRepository(Review);
-  if (await reviews.exists()) {
+  if (await dataSource.getRepository(Review).exists()) {
     console.log('reviews: skipped (already seeded)');
     return;
   }
@@ -48,30 +80,33 @@ export async function seedReviews(dataSource: DataSource): Promise<void> {
   }
 
   faker.seed(FAKER_SEED);
-  const now = new Date();
+  const now = DateTime.now();
   const selected = faker.helpers.arrayElements(
     eligible,
     Math.round(eligible.length * REVIEW_SHARE),
   );
+  const seeded: Record<ReviewStatus, number> = {
+    approved: 0,
+    rejected: 0,
+    pending: 0,
+  };
 
-  const counts = { approved: 0, rejected: 0, pending: 0 };
-  for (const stay of selected) {
-    const status: ReviewStatus = faker.helpers.weightedArrayElement(
-      REVIEW_STATUS_WEIGHTS,
-    );
-    await dataSource.transaction((manager) =>
-      insertReview(manager, stay, status, admin.id, now),
-    );
-    counts[status] += 1;
-  }
+  await dataSource.transaction(async (manager) => {
+    for (const stay of selected) {
+      const status = faker.helpers.weightedArrayElement(REVIEW_STATUS_WEIGHTS);
+      await insertReview(manager, stay, status, admin.id, now);
+      seeded[status] += 1;
+    }
+  });
 
   console.log(
     `reviews: ${selected.length} seeded of ${eligible.length} eligible stays ` +
-      `(approved ${counts.approved}, rejected ${counts.rejected}, pending ${counts.pending})`,
+      `(approved ${seeded.approved}, rejected ${seeded.rejected}, pending ${seeded.pending})`,
   );
 }
 
-// Paid, ended stays: the only bookings a guest is allowed to review.
+// Paid, ended stays: the only bookings a guest is allowed to review. Ordered,
+// so the seeded draw picks the same stays on every run.
 async function findEligibleStays(
   dataSource: DataSource,
 ): Promise<EligibleStay[]> {
@@ -87,22 +122,33 @@ async function findEligibleStays(
       status: 'approved',
       checkOutDate: LessThan(hotelToday()),
     },
+    order: { id: 'ASC' },
   });
 }
 
+// Writes the review with its final status plus the moderation row that
+// status is a projection of.
 async function insertReview(
   manager: EntityManager,
   stay: EligibleStay,
   status: ReviewStatus,
   adminUserId: string,
-  now: Date,
+  now: DateTime,
 ): Promise<void> {
-  const checkOutStart = DateTime.fromISO(stay.checkOutDate, {
+  const checkedOut = DateTime.fromISO(stay.checkOutDate, {
     zone: HOTEL_TIME_ZONE,
   }).startOf('day');
-  const createdAt = randomInstantBetween(checkOutStart.toJSDate(), now);
-  const updatedAt =
-    status === 'pending' ? createdAt : randomInstantBetween(createdAt, now);
+  const latest = DateTime.min(
+    checkedOut.plus({ days: REVIEWED_WITHIN_DAYS }),
+    now.minus(MODERATED_AFTER),
+  )!;
+  const createdAt = faker.date.between({
+    from: checkedOut.toJSDate(),
+    to: latest.toJSDate(),
+  });
+  const moderatedAt = DateTime.fromJSDate(createdAt)
+    .plus(MODERATED_AFTER)
+    .toJSDate();
 
   const review = await manager.save(
     manager.create(Review, {
@@ -111,7 +157,7 @@ async function insertReview(
       comment: faker.helpers.arrayElement(REVIEW_COMMENTS),
       status,
       createdAt,
-      updatedAt,
+      updatedAt: status === 'pending' ? createdAt : moderatedAt,
     }),
   );
 
@@ -119,7 +165,7 @@ async function insertReview(
     await manager.insert(ReviewApproval, {
       reviewId: review.id,
       adminUserId,
-      createdAt: updatedAt,
+      createdAt: moderatedAt,
     });
   }
   if (status === 'rejected') {
@@ -127,7 +173,7 @@ async function insertReview(
       reviewId: review.id,
       adminUserId,
       reason: faker.helpers.arrayElement(REVIEW_REJECTION_REASONS),
-      createdAt: updatedAt,
+      createdAt: moderatedAt,
     });
   }
 }
