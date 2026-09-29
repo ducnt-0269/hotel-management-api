@@ -62,8 +62,6 @@ export class BookingRequestReviewService {
     return toReviewResponse(review, Number(bookingRequest.roomTypeId));
   }
 
-  // Checked in this order: not approved → not paid → stay not ended. A second
-  // review is left to the UNIQUE on insert.
   private async assertReviewable(
     bookingRequest: Pick<BookingRequest, 'id' | 'status' | 'checkOutDate'>,
   ): Promise<void> {

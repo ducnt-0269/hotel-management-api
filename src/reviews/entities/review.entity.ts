@@ -25,7 +25,6 @@ export class Review {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  // 1 booking = 1 review; the room type is derived from the booking.
   @Column({ name: 'booking_request_id', type: 'bigint', unique: true })
   bookingRequestId: string;
 

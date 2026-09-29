@@ -2,8 +2,7 @@ import type { Review } from './entities/review.entity.js';
 import type { ReviewResponse } from './schemas/review.schema.js';
 import type { FindOptionsSelect } from 'typeorm';
 
-// Exactly the columns `toReviewResponse` reads off `Review` itself; the room
-// type id comes from the booking, not the review row.
+// Exactly the columns `toReviewResponse` reads.
 export const reviewResponseColumns: FindOptionsSelect<Review> = {
   id: true,
   bookingRequestId: true,
