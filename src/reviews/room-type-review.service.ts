@@ -19,11 +19,10 @@ export class RoomTypeReviewService {
     roomTypeId: number,
     query: PaginationQuery,
   ): Promise<Paginated<ReviewResponse>> {
-    const roomType = await this.dataSource.manager.findOne(RoomType, {
-      select: { id: true },
-      where: { id: String(roomTypeId) },
+    const exists = await this.dataSource.manager.existsBy(RoomType, {
+      id: String(roomTypeId),
     });
-    if (!roomType) {
+    if (!exists) {
       throw new NotFoundException('Room type not found');
     }
 
