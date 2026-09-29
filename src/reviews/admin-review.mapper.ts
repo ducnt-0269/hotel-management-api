@@ -3,7 +3,6 @@ import { reviewResponseColumns, toReviewResponse } from './review.mapper.js';
 
 import type { User } from '../users/entities/user.entity.js';
 import type { Review } from './entities/review.entity.js';
-import type { ReviewRejection } from './rejection/entities/review-rejection.entity.js';
 import type { AdminReviewResponse } from './schemas/admin-review.schema.js';
 import type { FindOptionsSelect } from 'typeorm';
 
@@ -21,10 +20,9 @@ export function toAdminReviewResponse(
   review: Review,
   roomTypeId: number,
   user: Pick<User, 'id' | 'email' | 'fullName'>,
-  rejections: ReviewRejection[],
 ): AdminReviewResponse {
   return {
-    ...toReviewResponse(review, roomTypeId, rejections),
+    ...toReviewResponse(review, roomTypeId),
     user: toUserSummary(user),
   };
 }

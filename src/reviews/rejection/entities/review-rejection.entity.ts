@@ -5,11 +5,14 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { User } from '../../../users/entities/user.entity.js';
 import { Review } from '../../entities/review.entity.js';
+
+import type { Relation } from 'typeorm';
 
 // Outcome table: INSERT-only, one timestamp, no nullable column.
 // (pending → rejected)
@@ -21,9 +24,9 @@ export class ReviewRejection {
   @Column({ name: 'review_id', type: 'bigint', unique: true })
   reviewId: string;
 
-  @ManyToOne(() => Review)
+  @OneToOne(() => Review, (review) => review.rejection)
   @JoinColumn({ name: 'review_id' })
-  review: Review;
+  review: Relation<Review>;
 
   @Index()
   @Column({ name: 'admin_user_id', type: 'bigint' })

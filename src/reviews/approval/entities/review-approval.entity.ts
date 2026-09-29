@@ -5,6 +5,7 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -21,7 +22,7 @@ export class ReviewApproval {
   @Column({ name: 'review_id', type: 'bigint', unique: true })
   reviewId: string;
 
-  @ManyToOne(() => Review)
+  @OneToOne(() => Review)
   @JoinColumn({ name: 'review_id' })
   review: Review;
 

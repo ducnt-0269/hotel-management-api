@@ -30,6 +30,7 @@ export class RoomTypeReviewService {
     // the booking, so the filter joins `booking_requests` instead.
     const [rows, total] = await this.dataSource.manager.findAndCount(Review, {
       select: reviewResponseColumns,
+      relations: { rejection: true },
       where: {
         status: 'approved',
         bookingRequest: { roomTypeId: String(roomTypeId) },

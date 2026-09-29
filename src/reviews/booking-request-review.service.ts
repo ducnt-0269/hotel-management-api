@@ -11,7 +11,6 @@ import { BookingRequest } from '../booking-requests/entities/booking-request.ent
 import { isUniqueViolation } from '../database/is-unique-violation.js';
 import { Payment } from '../payment-sessions/payment/entities/payment.entity.js';
 import { Review } from './entities/review.entity.js';
-import { findReviewRejections } from './review-outcomes.js';
 import { reviewResponseColumns, toReviewResponse } from './review.mapper.js';
 
 import type { User } from '../users/entities/user.entity.js';
@@ -55,19 +54,13 @@ export class BookingRequestReviewService {
     const bookingRequest = await this.findOwnBookingRequest(user, id);
     const review = await this.dataSource.manager.findOne(Review, {
       select: reviewResponseColumns,
+      relations: { rejection: true },
       where: { bookingRequestId: bookingRequest.id },
     });
     if (!review) {
       throw new NotFoundException('Review not found');
     }
-    const rejections = await findReviewRejections(this.dataSource.manager, [
-      review.id,
-    ]);
-    return toReviewResponse(
-      review,
-      Number(bookingRequest.roomTypeId),
-      rejections,
-    );
+    return toReviewResponse(review, Number(bookingRequest.roomTypeId));
   }
 
   private async assertReviewable(

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { paginate, toSkipTake } from '../common/pagination/paginate.js';
 import {
@@ -8,7 +8,6 @@ import {
   toAdminReviewResponse,
 } from './admin-review.mapper.js';
 import { Review } from './entities/review.entity.js';
-import { findReviewRejections } from './review-outcomes.js';
 
 import type { Paginated } from '../common/pagination/paginate.js';
 import type {
@@ -21,7 +20,6 @@ import type {
 @Injectable()
 export class AdminReviewsService {
   constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
     @InjectRepository(Review)
     private readonly reviewsRepository: Repository<Review>,
   ) {}
@@ -30,21 +28,16 @@ export class AdminReviewsService {
     const [rows, total] = await this.reviewsRepository.findAndCount({
       select: adminReviewResponseColumns,
       where: { ...(query.status && { status: query.status }) },
-      relations: { bookingRequest: { user: true } },
+      relations: { bookingRequest: { user: true }, rejection: true },
       order: { createdAt: 'DESC', id: 'DESC' },
       ...toSkipTake(query),
     });
-    const rejections = await findReviewRejections(
-      this.dataSource.manager,
-      rows.map((row) => row.id),
-    );
     return paginate(
       rows.map((row) =>
         toAdminReviewResponse(
           row,
           Number(row.bookingRequest.roomTypeId),
           row.bookingRequest.user,
-          rejections,
         ),
       ),
       total,
