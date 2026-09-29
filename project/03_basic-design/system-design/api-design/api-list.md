@@ -53,8 +53,10 @@
   "rejection": { "reason": "…", "createdAt": "…" } }                    // null khi không bị từ chối
 
 // Review   (không có tác giả: route của user là review của chính họ, danh sách công khai không lộ tên khách)
+//          (bản `/admin` — AdminReview: thêm "user": { id, email, fullName })
 { "id": 5, "bookingRequestId": 42, "roomTypeId": 3, "rating": 5, "comment": "…",
-  "status": "pending", "createdAt": "…" }
+  "status": "pending", "createdAt": "…",
+  "rejection": { "reason": "…", "createdAt": "…" } }                    // null khi không bị từ chối
 
 // PaymentSession   (link trang thanh toán của Stripe; khách trả ở đó, không qua API)
 { "url": "https://checkout.stripe.com/c/pay/cs_test_…", "expiresAt": "2026-09-26T07:41:00Z" }
@@ -62,7 +64,7 @@
 // Outcome
 { "bookingRequestId": 42, "adminUserId": 1, "createdAt": "…" }             // rejection thêm "reason"
 { "bookingRequestId": 42, "createdAt": "…" }                                // cancellation
-{ "reviewId": 5, "adminUserId": 1, "createdAt": "…" }
+{ "reviewId": 5, "adminUserId": 1, "createdAt": "…" }                      // rejection thêm "reason"
 { "userId": 7, "adminUserId": 1, "createdAt": "…" }
 
 // Auth
@@ -102,9 +104,9 @@
 | 19  | F-011               | POST   | `/admin/booking-requests/:id/rejection` | Admin       | body: reason                                                         | Outcome                | `reason` trim, 1–500 ký tự, rỗng → 400; 403/404/409 `not pending` như dòng 18, nhưng không kiểm tra `expiresAt`: hold quá hạn đã nhả phòng, từ chối không lấy gì của ai. Sau commit → job mail kèm lý do (F-015) |
 | 20  | F-012               | POST   | `/payment-sessions`                  | User (chủ)  | body: bookingRequestId                                               | PaymentSession         | 201, cả khi trả lại link còn mở. 404 không có / không phải của mình; 409 chưa approved, đã trả, link cũ đã hết hạn nhưng Stripe chưa báo (thử lại sau), hoặc hai request cùng lúc; 502 Stripe lỗi. Chỉ nhận thẻ, VND |
 | 21  | F-013               | POST   | `/booking-requests/:id/review`       | User (chủ)  | body: rating, comment                                                | Review (pending)       | 201. `rating` nguyên 1–5, `comment` trim 1–1000. Admin → 403; 404 nếu không có / không phải của mình. 409 theo thứ tự: `Booking request is not approved` → `Booking request is not paid` (chưa có dòng `payments`) → `Stay has not ended` (hôm nay, giờ khách sạn, < `checkOutDate`; đúng ngày check-out là được) → `Booking request already has a review` (UNIQUE bắt cả hai request cùng lúc) |
-| 22  | F-014               | GET    | `/admin/reviews`                     | Admin       | query: status (mặc định pending), page, perPage                      | List\<Review\>         |                                                                                          |
-| 23  | F-014               | POST   | `/admin/reviews/:id/approval`        | Admin       | —                                                                    | Outcome                | 409 không còn pending                                                                    |
-| 24  | F-014               | POST   | `/admin/reviews/:id/rejection`       | Admin       | —                                                                    | Outcome                | 409                                                                                      |
+| 22  | F-014               | GET    | `/admin/reviews`                     | Admin       | query: status (mặc định pending), page, perPage                      | List\<AdminReview\>    | Hàng đợi duyệt: `createdAt` tăng dần (cũ nhất trước), kèm `user` là khách của booking |
+| 23  | F-014               | POST   | `/admin/reviews/:id/approval`        | Admin       | —                                                                    | Outcome                | 201. Guest → 403; 404 nếu không có; 409 `Review is not pending` |
+| 24  | F-014               | POST   | `/admin/reviews/:id/rejection`       | Admin       | body: reason                                                         | Outcome                | 201. `reason` trim 1–500, rỗng → 400; 403/404/409 như dòng 23. Lý do hiện ra ở `rejection` của Review, khách xem qua dòng 36 |
 | 25  | F-004               | GET    | `/admin/users`                       | Admin       | query: page, perPage, status, role, q                                | List\<User\>           | `q` tìm theo email / tên                                                                 |
 | 26  | F-004               | GET    | `/admin/users/:id`                   | Admin       | —                                                                    | User                   |                                                                                          |
 | 27  | F-004               | POST   | `/admin/users/:id/deactivation`      | Admin       | —                                                                    | Outcome                | 409 không active; 409 tự khoá mình                                                       |
@@ -159,3 +161,5 @@
 | 2026-09-28 | Dòng 21: thêm 409 `Booking request is not paid` — review cần booking `approved` **và đã trả tiền**, và kỳ lưu trú đã qua (từ đúng ngày check-out) | Thiết kế viết trước khi có thanh toán. Đã trả là bằng chứng khách thật sự đặt để ở, không chỉ giữ chỗ; hoàn thành = approved + đã trả + đã qua `checkOutDate`. Cả ba điều kiện chỉ đi một chiều (approved là trạng thái cuối, payment không bị xoá) nên không cần khoá, UNIQUE lo hai request cùng lúc |
 | 2026-09-28 | Thêm dòng 36 `GET /booking-requests/:id/review` | Review phải qua duyệt, nên khách cần một chỗ xem review của mình đang ở trạng thái nào; quan hệ 1–1 với booking nên là sub-resource số ít, không cần id review |
 | 2026-09-28 | §2: `Review` bỏ `author` | Ở route của user, tác giả chính là người gọi; ở danh sách công khai, trả họ tên đầy đủ của khách cho người chưa đăng nhập là lộ thông tin cá nhân. Admin cần biết ai viết thì sẽ có bản admin riêng kèm `user`, như `AdminBookingRequest` |
+| 2026-09-28 | Dòng 24 nhận body `reason` (bắt buộc); `Review` thêm `rejection: { reason, createdAt } \| null` | Khách xem được trạng thái review (dòng 36) nhưng không gửi lại được sau khi bị từ chối, nên lý do là phản hồi duy nhất họ có. Cùng khuôn với từ chối booking (dòng 19) và `BookingRequest.rejection` |
+| 2026-09-28 | Dòng 22 trả `AdminReview` (= `Review` + `user`), `createdAt` tăng dần | Admin cần biết ai viết, như `AdminBookingRequest`. Hàng đợi duyệt đi từ review chờ lâu nhất |
