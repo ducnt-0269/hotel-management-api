@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { timestampSchema } from '../../common/api-docs/timestamp.schema.js';
 import {
   paginatedSchema,
   paginationQuerySchema,
@@ -26,12 +27,6 @@ export const listOwnBookingRequestsQuerySchema = paginationQuerySchema.extend({
   roomTypeId: idSchema.optional(),
 });
 
-const timestamp = {
-  type: 'string',
-  format: 'date-time',
-  examples: ['2026-09-23T03:00:00.000Z'],
-} as const;
-
 export const createBookingRequestBodySchema = z
   .object({
     roomTypeId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
@@ -51,19 +46,19 @@ export const bookingRequestResponseSchema = z.object({
   nights: z.number().int(),
   totalAmount: z.number().int(),
   status: bookingRequestStatusSchema,
-  expiresAt: z.date().meta(timestamp),
-  createdAt: z.date().meta(timestamp),
+  expiresAt: timestampSchema,
+  createdAt: timestampSchema,
   payment: z
     .object({
       amount: z.number().int(),
-      paidAt: z.date().meta(timestamp),
+      paidAt: timestampSchema,
     })
     .nullable()
     .describe('What Stripe took and when; null until the request is paid'),
   rejection: z
     .object({
       reason: z.string(),
-      createdAt: z.date().meta(timestamp),
+      createdAt: timestampSchema,
     })
     .nullable()
     .describe('Why and when an admin refused it; null unless rejected'),

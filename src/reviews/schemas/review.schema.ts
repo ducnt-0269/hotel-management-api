@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { timestampSchema } from '../../common/api-docs/timestamp.schema.js';
 import { paginatedSchema } from '../../common/pagination/pagination.schema.js';
 import {
   COMMENT_MAX_LENGTH,
@@ -15,12 +16,6 @@ export const createReviewBodySchema = z.object({
   comment: z.string().trim().min(1).max(COMMENT_MAX_LENGTH),
 });
 
-const timestamp = {
-  type: 'string',
-  format: 'date-time',
-  examples: ['2026-09-23T03:00:00.000Z'],
-} as const;
-
 // The JSON exactly as it leaves the API; `toReviewResponse` builds it.
 export const reviewResponseSchema = z.object({
   id: z.number().int(),
@@ -29,7 +24,7 @@ export const reviewResponseSchema = z.object({
   rating: z.number().int(),
   comment: z.string(),
   status: reviewStatusSchema,
-  createdAt: z.date().meta(timestamp),
+  createdAt: timestampSchema,
 });
 
 export const reviewListResponseSchema = paginatedSchema(reviewResponseSchema);

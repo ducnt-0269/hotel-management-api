@@ -181,6 +181,7 @@ Never write code that updates `status` without inserting the matching outcome ro
   real constraints (`default`, `minimum`, `maximum`). **Do not add `@ApiQuery`** — it appends a second
   copy of the same parameter. Per-param prose goes on the Zod field via `.describe()`.
 - Declaring any `@ApiResponse` removes Nest's implicit success entry, so state the success status too.
-- `z.date()` has no JSON Schema form: date fields carry `.meta({ type: 'string', format: 'date-time' })`.
+- `z.date()` has no JSON Schema form: date fields use `timestampSchema`
+  (`src/common/api-docs/timestamp.schema.ts`), which carries the `date-time` meta.
 - To inspect the generated document: boot `AppModule` in a scratch script under `dist/`, call
   `SwaggerModule.createDocument` + `addStandardErrorResponses`, print `doc.paths`.

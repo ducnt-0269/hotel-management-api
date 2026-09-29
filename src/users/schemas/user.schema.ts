@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { timestampSchema } from '../../common/api-docs/timestamp.schema.js';
 import {
   paginatedSchema,
   paginationQuerySchema,
@@ -29,19 +30,20 @@ export const fullNameSchema = z
 const userRoleSchema = z.enum(USER_ROLES);
 const userStatusSchema = z.enum(USER_STATUSES);
 
-const timestamp = {
-  type: 'string',
-  format: 'date-time',
-  examples: ['2026-09-22T04:08:46.495Z'],
-} as const;
-
 export const userResponseSchema = z.object({
   id: z.number().int(),
   email: z.string(),
   fullName: z.string(),
   role: userRoleSchema,
   status: userStatusSchema,
-  createdAt: z.date().meta(timestamp),
+  createdAt: timestampSchema,
+});
+
+// Who a record belongs to, when the full user would be noise.
+export const userSummarySchema = userResponseSchema.pick({
+  id: true,
+  email: true,
+  fullName: true,
 });
 
 export const userListResponseSchema = paginatedSchema(userResponseSchema);
@@ -78,3 +80,4 @@ export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>;
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
+export type UserSummary = z.infer<typeof userSummarySchema>;

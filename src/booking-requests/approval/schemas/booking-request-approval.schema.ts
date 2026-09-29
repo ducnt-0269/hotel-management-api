@@ -1,15 +1,11 @@
 import { z } from 'zod';
 
-const timestamp = {
-  type: 'string',
-  format: 'date-time',
-  examples: ['2026-09-24T03:00:00.000Z'],
-} as const;
+import { timestampSchema } from '../../../common/api-docs/timestamp.schema.js';
 
 export const bookingRequestApprovalResponseSchema = z.object({
   bookingRequestId: z.number().int(),
   adminUserId: z.number().int(),
-  createdAt: z.date().meta(timestamp),
+  createdAt: timestampSchema,
 });
 
 export type BookingRequestApprovalResponse = z.infer<

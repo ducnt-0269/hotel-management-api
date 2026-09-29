@@ -4,6 +4,7 @@ import {
   paginatedSchema,
   paginationQuerySchema,
 } from '../../common/pagination/pagination.schema.js';
+import { userSummarySchema } from '../../users/schemas/user.schema.js';
 import {
   bookingRequestResponseSchema,
   bookingRequestStatusSchema,
@@ -20,11 +21,7 @@ export const listBookingRequestsQuerySchema = paginationQuerySchema.extend({
 // The guest's shape plus who raised the request.
 export const adminBookingRequestResponseSchema =
   bookingRequestResponseSchema.extend({
-    user: z.object({
-      id: z.number().int(),
-      email: z.string(),
-      fullName: z.string(),
-    }),
+    user: userSummarySchema,
   });
 
 export const adminBookingRequestListResponseSchema = paginatedSchema(
