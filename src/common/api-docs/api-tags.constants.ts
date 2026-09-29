@@ -11,6 +11,7 @@ export const API_TAGS = {
   adminUsers: 'Admin · Users',
   adminBookingRequests: 'Admin · Booking requests',
   adminRoomTypes: 'Admin · Room types',
+  adminReviews: 'Admin · Reviews',
 } as const;
 
 // Scalar's `x-tagGroups` extension: a second sidebar level above the tags.
@@ -33,6 +34,7 @@ export const API_TAG_GROUPS = [
       API_TAGS.adminUsers,
       API_TAGS.adminBookingRequests,
       API_TAGS.adminRoomTypes,
+      API_TAGS.adminReviews,
     ],
   },
 ];

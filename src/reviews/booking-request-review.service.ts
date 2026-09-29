@@ -11,6 +11,7 @@ import { BookingRequest } from '../booking-requests/entities/booking-request.ent
 import { isUniqueViolation } from '../database/is-unique-violation.js';
 import { Payment } from '../payment-sessions/payment/entities/payment.entity.js';
 import { Review } from './entities/review.entity.js';
+import { findReviewRejections } from './review-outcomes.js';
 import { reviewResponseColumns, toReviewResponse } from './review.mapper.js';
 
 import type { User } from '../users/entities/user.entity.js';
@@ -59,7 +60,14 @@ export class BookingRequestReviewService {
     if (!review) {
       throw new NotFoundException('Review not found');
     }
-    return toReviewResponse(review, Number(bookingRequest.roomTypeId));
+    const rejections = await findReviewRejections(this.dataSource.manager, [
+      review.id,
+    ]);
+    return toReviewResponse(
+      review,
+      Number(bookingRequest.roomTypeId),
+      rejections,
+    );
   }
 
   private async assertReviewable(
