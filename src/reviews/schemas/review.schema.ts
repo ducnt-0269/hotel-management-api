@@ -25,6 +25,13 @@ export const reviewResponseSchema = z.object({
   comment: z.string(),
   status: reviewStatusSchema,
   createdAt: timestampSchema,
+  rejection: z
+    .object({
+      reason: z.string(),
+      createdAt: timestampSchema,
+    })
+    .nullable()
+    .describe('Why an admin refused it; null unless rejected'),
 });
 
 export const reviewListResponseSchema = paginatedSchema(reviewResponseSchema);

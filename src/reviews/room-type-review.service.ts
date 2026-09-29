@@ -28,6 +28,7 @@ export class RoomTypeReviewService {
 
     // No `room_type_id` column on `reviews`: the room type is derived from
     // the booking, so the filter joins `booking_requests` instead.
+    // Approved reviews have no rejection, so it is not joined.
     const [rows, total] = await this.dataSource.manager.findAndCount(Review, {
       select: reviewResponseColumns,
       where: {

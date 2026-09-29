@@ -54,6 +54,7 @@ export class BookingRequestReviewService {
     const bookingRequest = await this.findOwnBookingRequest(user, id);
     const review = await this.dataSource.manager.findOne(Review, {
       select: reviewResponseColumns,
+      relations: { rejection: true },
       where: { bookingRequestId: bookingRequest.id },
     });
     if (!review) {

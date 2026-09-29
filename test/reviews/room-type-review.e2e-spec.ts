@@ -2,7 +2,10 @@ import request from 'supertest';
 
 import { createTestApp } from '../support/create-test-app.js';
 import { createBookingRequest } from '../support/factories/booking-request.factory.js';
-import { createReview } from '../support/factories/review.factory.js';
+import {
+  createRejectedReview,
+  createReview,
+} from '../support/factories/review.factory.js';
 import { createRoomType } from '../support/factories/room-type.factory.js';
 import { createUser } from '../support/factories/user.factory.js';
 import { resetDb } from '../support/reset-db.js';
@@ -54,9 +57,9 @@ describe('room type reviews (e2e)', () => {
       status: 'pending',
       comment: 'Still awaiting moderation',
     });
-    await createReview(app, {
+    await createRejectedReview(app, {
       bookingRequest: await bookFor(roomType),
-      status: 'rejected',
+      admin: await createUser(app, { role: 'admin' }),
       comment: 'Rejected by an admin',
     });
 

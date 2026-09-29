@@ -6,11 +6,13 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { BookingRequest } from '../../booking-requests/entities/booking-request.entity.js';
+import { ReviewRejection } from '../rejection/entities/review-rejection.entity.js';
 
 import type { REVIEW_STATUSES } from '../review.constants.js';
 import type { Relation } from 'typeorm';
@@ -49,4 +51,8 @@ export class Review {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  // Null unless an admin rejected the review. Loaded only when a query joins it.
+  @OneToOne(() => ReviewRejection, (rejection) => rejection.review)
+  rejection: Relation<ReviewRejection> | null;
 }
