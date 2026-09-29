@@ -2,13 +2,76 @@ import { UserEmailVerification } from '../../auth/entities/user-email-verificati
 import { hashPassword } from '../../common/security/password.js';
 import { UserDeactivation } from '../../users/deactivation/entities/user-deactivation.entity.js';
 import { User } from '../../users/entities/user.entity.js';
-import { USERS } from './users.seed-data.js';
 
-import type { UserSeed } from './users.seed-data.js';
+import type { UserRole, UserStatus } from '../../users/entities/user.entity.js';
 import type { DataSource, EntityManager } from 'typeorm';
 
 // Local and demo only: every seeded account shares this password.
 const SEED_PASSWORD = 'Password123';
+
+interface UserSeed {
+  email: string;
+  fullName: string;
+  role: UserRole;
+  status: UserStatus;
+}
+
+// [email, full name]: active guests, the pool a year of demo bookings and
+// reviews is spread across.
+const ACTIVE_GUESTS: [string, string][] = [
+  ['an.nguyen@example.com', 'Nguyễn Văn An'],
+  ['binh.tran@example.com', 'Trần Thị Bình'],
+  ['cuong.le@example.com', 'Lê Minh Cường'],
+  ['dung.pham@example.com', 'Phạm Thu Dung'],
+  ['em.hoang@example.com', 'Hoàng Gia Em'],
+  ['lan.dang@example.com', 'Đặng Thị Lan'],
+  ['minh.ngo@example.com', 'Ngô Đức Minh'],
+  ['nga.duong@example.com', 'Dương Thị Nga'],
+  ['oanh.ly@example.com', 'Lý Kim Oanh'],
+  ['phuc.trinh@example.com', 'Trịnh Văn Phúc'],
+  ['quyen.mai@example.com', 'Mai Thanh Quyên'],
+  ['son.phan@example.com', 'Phan Hữu Sơn'],
+  ['thao.vuong@example.com', 'Vương Ngọc Thảo'],
+  ['tuan.dinh@example.com', 'Đinh Anh Tuấn'],
+  ['uyen.ho@example.com', 'Hồ Bảo Uyên'],
+  ['van.truong@example.com', 'Trương Gia Vân'],
+  ['yen.chu@example.com', 'Chu Khánh Yến'],
+];
+
+// Demo data, meant to be edited. The admin comes first: it is the actor
+// recorded on the seeded deactivation.
+const USERS: UserSeed[] = [
+  {
+    email: 'admin@hotel.local',
+    fullName: 'Quản Trị Viên',
+    role: 'admin',
+    status: 'active',
+  },
+  {
+    email: 'giang.vu@example.com',
+    fullName: 'Vũ Hương Giang',
+    role: 'user',
+    status: 'unverified',
+  },
+  {
+    email: 'hai.do@example.com',
+    fullName: 'Đỗ Thanh Hải',
+    role: 'user',
+    status: 'unverified',
+  },
+  {
+    email: 'khanh.bui@example.com',
+    fullName: 'Bùi Quốc Khánh',
+    role: 'user',
+    status: 'deactivated',
+  },
+  ...ACTIVE_GUESTS.map(([email, fullName]): UserSeed => ({
+    email,
+    fullName,
+    role: 'user',
+    status: 'active',
+  })),
+];
 
 // Writes the user with its final status plus the outcome rows that status is
 // a projection of, so a seeded account looks exactly like one that went
