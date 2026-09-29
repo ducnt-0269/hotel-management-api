@@ -1,5 +1,7 @@
 import dataSource from '../data-source.js';
 import { seedAmenities } from './amenities.seeder.js';
+import { seedBookingRequests } from './booking-requests.seeder.js';
+import { seedReviews } from './reviews.seeder.js';
 import { seedRoomTypes } from './room-types.seeder.js';
 import { seedUsers } from './users.seeder.js';
 
@@ -11,6 +13,8 @@ const SEEDERS: Record<string, (dataSource: DataSource) => Promise<void>> = {
   users: seedUsers,
   amenities: seedAmenities,
   'room-types': seedRoomTypes,
+  'booking-requests': seedBookingRequests,
+  reviews: seedReviews,
 };
 
 // `npm run seed` runs every seeder; `npm run seed -- users room-types` runs
