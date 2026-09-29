@@ -1,3 +1,4 @@
+import { toUserSummary, userSummaryColumns } from '../users/user.mapper.js';
 import { reviewResponseColumns, toReviewResponse } from './review.mapper.js';
 
 import type { User } from '../users/entities/user.entity.js';
@@ -12,7 +13,7 @@ export const adminReviewResponseColumns: FindOptionsSelect<Review> = {
   bookingRequest: {
     id: true,
     roomTypeId: true,
-    user: { id: true, email: true, fullName: true },
+    user: userSummaryColumns,
   },
 };
 
@@ -24,6 +25,6 @@ export function toAdminReviewResponse(
 ): AdminReviewResponse {
   return {
     ...toReviewResponse(review, roomTypeId, rejections),
-    user: { id: Number(user.id), email: user.email, fullName: user.fullName },
+    user: toUserSummary(user),
   };
 }

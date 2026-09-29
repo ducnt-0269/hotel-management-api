@@ -1,12 +1,7 @@
 import { z } from 'zod';
 
+import { timestampSchema } from '../../../common/api-docs/timestamp.schema.js';
 import { REJECTION_REASON_MAX_LENGTH } from '../review-rejection.constants.js';
-
-const timestamp = {
-  type: 'string',
-  format: 'date-time',
-  examples: ['2026-09-28T03:00:00.000Z'],
-} as const;
 
 export const createReviewRejectionBodySchema = z.object({
   reason: z
@@ -21,7 +16,7 @@ export const reviewRejectionResponseSchema = z.object({
   reviewId: z.number().int(),
   adminUserId: z.number().int(),
   reason: z.string(),
-  createdAt: z.date().meta(timestamp),
+  createdAt: timestampSchema,
 });
 
 export type CreateReviewRejectionBody = z.infer<

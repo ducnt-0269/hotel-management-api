@@ -4,6 +4,7 @@ import {
   paginatedSchema,
   paginationQuerySchema,
 } from '../../common/pagination/pagination.schema.js';
+import { userSummarySchema } from '../../users/schemas/user.schema.js';
 import { reviewResponseSchema, reviewStatusSchema } from './review.schema.js';
 
 // Capped so an absurd id is a 400 here, not a numeric overflow in Postgres.
@@ -19,11 +20,7 @@ export const listReviewsQuerySchema = paginationQuerySchema.extend({
 
 // The guest's shape plus who left it.
 export const adminReviewResponseSchema = reviewResponseSchema.extend({
-  user: z.object({
-    id: z.number().int(),
-    email: z.string(),
-    fullName: z.string(),
-  }),
+  user: userSummarySchema,
 });
 
 export const adminReviewListResponseSchema = paginatedSchema(
