@@ -39,6 +39,13 @@ export const userResponseSchema = z.object({
   createdAt: timestampSchema,
 });
 
+// Who a record belongs to, when the full user would be noise.
+export const userSummarySchema = userResponseSchema.pick({
+  id: true,
+  email: true,
+  fullName: true,
+});
+
 export const userListResponseSchema = paginatedSchema(userResponseSchema);
 
 export const listUsersQuerySchema = paginationQuerySchema.extend({
@@ -73,3 +80,4 @@ export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>;
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
+export type UserSummary = z.infer<typeof userSummarySchema>;

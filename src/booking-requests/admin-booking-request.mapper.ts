@@ -1,3 +1,4 @@
+import { toUserSummary, userSummaryColumns } from '../users/user.mapper.js';
 import {
   bookingRequestResponseColumns,
   toBookingRequestResponse,
@@ -14,7 +15,7 @@ import type { FindOptionsSelect } from 'typeorm';
 export const adminBookingRequestResponseColumns: FindOptionsSelect<BookingRequest> =
   {
     ...bookingRequestResponseColumns,
-    user: { id: true, email: true, fullName: true },
+    user: userSummaryColumns,
   };
 
 export function toAdminBookingRequestResponse(
@@ -30,6 +31,6 @@ export function toAdminBookingRequestResponse(
       payments,
       rejections,
     ),
-    user: { id: Number(user.id), email: user.email, fullName: user.fullName },
+    user: toUserSummary(user),
   };
 }
