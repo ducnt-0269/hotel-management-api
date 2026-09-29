@@ -4,16 +4,13 @@ import {
   paginatedSchema,
   paginationQuerySchema,
 } from '../../common/pagination/pagination.schema.js';
-import { MAX_ROOMS_PER_REQUEST } from '../booking-request.constants.js';
+import {
+  BOOKING_REQUEST_STATUSES,
+  MAX_ROOMS_PER_REQUEST,
+} from '../booking-request.constants.js';
 import { refineStayDates } from './stay-dates.schema.js';
 
-export const bookingRequestStatusSchema = z.enum([
-  'pending',
-  'approved',
-  'rejected',
-  'cancelled',
-  'expired',
-]);
+export const bookingRequestStatusSchema = z.enum(BOOKING_REQUEST_STATUSES);
 
 // Capped so an absurd id is a 400 here, not a numeric overflow in Postgres.
 export const idSchema = z.coerce

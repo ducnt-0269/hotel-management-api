@@ -5,9 +5,10 @@ import {
   COMMENT_MAX_LENGTH,
   RATING_MAX,
   RATING_MIN,
+  REVIEW_STATUSES,
 } from '../review.constants.js';
 
-export const reviewStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+export const reviewStatusSchema = z.enum(REVIEW_STATUSES);
 
 export const createReviewBodySchema = z.object({
   rating: z.number().int().min(RATING_MIN).max(RATING_MAX),

@@ -13,14 +13,10 @@ import {
 import { RoomType } from '../../room-types/entities/room-type.entity.js';
 import { User } from '../../users/entities/user.entity.js';
 
+import type { BOOKING_REQUEST_STATUSES } from '../booking-request.constants.js';
 import type { Relation } from 'typeorm';
 
-export type BookingRequestStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'cancelled'
-  | 'expired';
+export type BookingRequestStatus = (typeof BOOKING_REQUEST_STATUSES)[number];
 
 // A long-term event: inserted once, afterwards only `status` changes, and
 // only together with a row in the matching outcome table.

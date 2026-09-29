@@ -5,6 +5,7 @@ import {
   paginationQuerySchema,
 } from '../../common/pagination/pagination.schema.js';
 import { MAX_PASSWORD_BYTES } from '../../common/security/password.js';
+import { USER_ROLES, USER_STATUSES } from '../user.constants.js';
 
 // bcrypt hashes at most 72 *bytes*: a character cap would let two different
 // Vietnamese passphrases share a hash (`ế` alone is 3 bytes).
@@ -25,8 +26,8 @@ export const fullNameSchema = z
   // A literal space, not `\s`: that class also matches newlines and tabs.
   .regex(/^[\p{L}\p{M} '’.-]+$/u, 'Full name contains invalid characters');
 
-const userRoleSchema = z.enum(['user', 'admin']);
-const userStatusSchema = z.enum(['unverified', 'active', 'deactivated']);
+const userRoleSchema = z.enum(USER_ROLES);
+const userStatusSchema = z.enum(USER_STATUSES);
 
 const timestamp = {
   type: 'string',
