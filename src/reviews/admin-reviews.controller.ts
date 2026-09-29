@@ -28,7 +28,7 @@ export class AdminReviewsController {
   @Get()
   @RespondsWith(adminReviewListResponseSchema, {
     status: 200,
-    description: 'The moderation queue, oldest first',
+    description: 'Every review, or those in one status, newest first',
   })
   list(
     @Query({ schema: listReviewsQuerySchema }) query: ListReviewsQuery,
