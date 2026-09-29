@@ -8,8 +8,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type UserRole = 'user' | 'admin';
-export type UserStatus = 'unverified' | 'active' | 'deactivated';
+import type { USER_ROLES, USER_STATUSES } from '../user.constants.js';
+
+export type UserRole = (typeof USER_ROLES)[number];
+export type UserStatus = (typeof USER_STATUSES)[number];
 
 // Enums are varchar + CHECK, never Postgres native enums (database-design §6).
 @Entity('users')

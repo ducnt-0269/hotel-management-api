@@ -12,9 +12,10 @@ import {
 
 import { BookingRequest } from '../../booking-requests/entities/booking-request.entity.js';
 
+import type { REVIEW_STATUSES } from '../review.constants.js';
 import type { Relation } from 'typeorm';
 
-export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 
 // A long-term event: inserted once, afterwards only `status` changes, and
 // only together with a row in the matching outcome table.

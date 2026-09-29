@@ -11,7 +11,9 @@ import {
 
 import { BookingRequest } from '../../booking-requests/entities/booking-request.entity.js';
 
-export type PaymentSessionStatus = 'open' | 'completed' | 'expired';
+import type { PAYMENT_SESSION_STATUSES } from '../payment-session.constants.js';
+
+export type PaymentSessionStatus = (typeof PAYMENT_SESSION_STATUSES)[number];
 
 // A long-term event: one Stripe Checkout Session. Only `status` changes, and
 // only with a row in `payments` or `payment_session_expirations`.
