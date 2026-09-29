@@ -109,6 +109,7 @@ describe('booking request review (e2e)', () => {
         comment: validBody.comment,
         status: 'pending',
         createdAt: expect.any(String),
+        rejection: null,
       });
       expect(
         await reviews().countBy({ bookingRequestId: bookingRequest.id }),
@@ -252,6 +253,7 @@ describe('booking request review (e2e)', () => {
         comment: 'Nice view',
         status: 'pending',
         createdAt: expect.any(String),
+        rejection: null,
       });
     });
 
