@@ -29,9 +29,9 @@ export class AdminReviewsService {
   async list(query: ListReviewsQuery): Promise<Paginated<AdminReviewResponse>> {
     const [rows, total] = await this.reviewsRepository.findAndCount({
       select: adminReviewResponseColumns,
-      where: { status: query.status },
+      where: { ...(query.status && { status: query.status }) },
       relations: { bookingRequest: { user: true } },
-      order: { createdAt: 'ASC', id: 'ASC' },
+      order: { createdAt: 'DESC', id: 'DESC' },
       ...toSkipTake(query),
     });
     const rejections = await findReviewRejections(

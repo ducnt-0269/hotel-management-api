@@ -15,7 +15,7 @@ export const reviewIdParamSchema = z.coerce
   .max(Number.MAX_SAFE_INTEGER);
 
 export const listReviewsQuerySchema = paginationQuerySchema.extend({
-  status: reviewStatusSchema.default('pending'),
+  status: reviewStatusSchema.optional(),
 });
 
 // The guest's shape plus who left it.
