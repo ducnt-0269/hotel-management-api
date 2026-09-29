@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { REJECTION_REASON_MAX_LENGTH } from '../review-rejection.constants.js';
+
 const timestamp = {
   type: 'string',
   format: 'date-time',
@@ -7,7 +9,12 @@ const timestamp = {
 } as const;
 
 export const createReviewRejectionBodySchema = z.object({
-  reason: z.string().trim().min(1).max(500).describe('Shown to the guest'),
+  reason: z
+    .string()
+    .trim()
+    .min(1)
+    .max(REJECTION_REASON_MAX_LENGTH)
+    .describe('Shown to the guest'),
 });
 
 export const reviewRejectionResponseSchema = z.object({
