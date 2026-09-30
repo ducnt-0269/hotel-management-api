@@ -2,7 +2,6 @@ import { REVENUE_CURRENCY } from './revenue-statistics.constants.js';
 
 import type {
   RawMonthRevenue,
-  RawRevenueTotals,
   RawRoomTypeRevenue,
 } from './revenue-statistics.interfaces.js';
 import type {
@@ -11,12 +10,12 @@ import type {
   RevenueStatisticsRow,
 } from './schemas/revenue-statistics.schema.js';
 
-function totals(raw: RawRevenueTotals) {
-  return { revenue: Number(raw.revenue), payments: Number(raw.payments) };
-}
-
 export function toMonthRevenueRow(raw: RawMonthRevenue): RevenueStatisticsRow {
-  return { key: raw.month, ...totals(raw) };
+  return {
+    key: raw.month,
+    revenue: Number(raw.revenue),
+    payments: Number(raw.payments),
+  };
 }
 
 export function toRoomTypeRevenueRow(
@@ -24,7 +23,8 @@ export function toRoomTypeRevenueRow(
 ): RevenueStatisticsRow {
   return {
     key: { id: Number(raw.roomTypeId), name: raw.roomTypeName },
-    ...totals(raw),
+    revenue: Number(raw.revenue),
+    payments: Number(raw.payments),
   };
 }
 
