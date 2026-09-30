@@ -1,0 +1,9 @@
+# Left out of what `railway up` uploads, on top of .gitignore. The image only
+# needs what `nest build` compiles (src/) and the package manifests.
+project/
+test/
+docker/
+.github/
+docker-compose.yml
+vitest.config*.ts
+CLAUDE.md

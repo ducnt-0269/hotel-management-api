@@ -60,39 +60,46 @@ $ npm run test:cov
 ## Deployment
 
 A demo copy runs on [Railway](https://railway.com) for mentor review. It is short-lived and
-holds no real data. Every setting below lives in the Railway dashboard, not in the repo
-(Railway retires `railway.json` on 2026-12-01).
+holds no real data. The deploy itself is `.github/workflows/deploy.yml`; the service settings
+below live in the Railway dashboard (Railway retires `railway.json` on 2026-12-01).
 
-**How a change ships:** push to `main` → the `Quality gate` workflow runs → Railway, with
-**Wait for CI** on, builds only once it passes → the pre-deploy command migrates the database →
-the new version takes traffic after `/api/health` answers. A failed migration stops the deploy
-and the old version keeps running.
+**How a change ships:** a merge (any push) to `main` runs the `Quality gate` workflow → once it
+passes, the `Deploy` workflow uploads that exact commit with `railway up` → Railway builds it,
+the pre-deploy command migrates the database, and the new version takes traffic after
+`/api/health` answers → `Deploy` goes green only when the deployment reaches `SUCCESS`. A red
+Quality gate deploys nothing; a failed migration or health check stops the deploy, the old
+version keeps running, and `Deploy` goes red.
+
+The Railway service has no GitHub source connected, so the workflow is the only way code
+reaches it. It authenticates with the `RAILWAY_TOKEN` repository secret: a Railway project token
+for the `production` environment (Project settings → Tokens).
 
 ### Services (one Railway project)
 
 | Service | Source | Notes |
 | --- | --- | --- |
-| `api` | this GitHub repo, branch `main` | Built by Railpack (Node from `.nvmrc`); public domain |
+| `hotel-management-api` | none — code arrives from the `Deploy` workflow | Built by Railpack (Node from `.nvmrc`); public domain |
 | `Postgres` | Railway Postgres template | |
 | `Redis` | Railway Redis template | Password-protected, hence `REDIS_PASSWORD` |
 | `Mailpit` | image `axllent/mailpit` | Catches all mail. Public domain on port `8025` for the inbox; SMTP `1025` stays private |
 
-### `api` settings
+### `hotel-management-api` settings
 
 | Setting | Value |
 | --- | --- |
 | Start command | `npm run start:prod` |
-| Pre-deploy command | `node ./node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run` |
+| Pre-deploy command | `npx typeorm -d dist/database/data-source.js migration:run` |
 | Healthcheck path | `/api/health` |
 | Replicas | `1` — the hold-expiry cron and the mail worker run in-process |
-| Source → Wait for CI | on |
+| Public domain | target port `3000` |
 
-### `api` variables
+### `hotel-management-api` variables
 
 Values in `${{...}}` are Railway reference variables; the rest are entered by hand.
 
 ```bash
 NODE_ENV=staging                      # deployed, but keeps /api/docs; `production` hides it
+PORT=3000                             # the port the public domain targets
 APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 
 DB_HOST=${{Postgres.PGHOST}}
