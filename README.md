@@ -59,16 +59,77 @@ $ npm run test:cov
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+A demo copy runs on [Railway](https://railway.com) for mentor review. It is short-lived and
+holds no real data. Every setting below lives in the Railway dashboard, not in the repo
+(Railway retires `railway.json` on 2026-12-01).
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+**How a change ships:** push to `main` → the `Quality gate` workflow runs → Railway, with
+**Wait for CI** on, builds only once it passes → the pre-deploy command migrates the database →
+the new version takes traffic after `/api/health` answers. A failed migration stops the deploy
+and the old version keeps running.
+
+### Services (one Railway project)
+
+| Service | Source | Notes |
+| --- | --- | --- |
+| `api` | this GitHub repo, branch `main` | Built by Railpack (Node from `.nvmrc`); public domain |
+| `Postgres` | Railway Postgres template | |
+| `Redis` | Railway Redis template | Password-protected, hence `REDIS_PASSWORD` |
+| `Mailpit` | image `axllent/mailpit` | Catches all mail. Public domain on port `8025` for the inbox; SMTP `1025` stays private |
+
+### `api` settings
+
+| Setting | Value |
+| --- | --- |
+| Start command | `npm run start:prod` |
+| Pre-deploy command | `node ./node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run` |
+| Healthcheck path | `/api/health` |
+| Replicas | `1` — the hold-expiry cron and the mail worker run in-process |
+| Source → Wait for CI | on |
+
+### `api` variables
+
+Values in `${{...}}` are Railway reference variables; the rest are entered by hand.
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+NODE_ENV=staging                      # deployed, but keeps /api/docs; `production` hides it
+APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
+
+DB_HOST=${{Postgres.PGHOST}}
+DB_PORT=${{Postgres.PGPORT}}
+DB_USERNAME=${{Postgres.PGUSER}}
+DB_PASSWORD=${{Postgres.PGPASSWORD}}
+DB_NAME=${{Postgres.PGDATABASE}}
+
+REDIS_HOST=${{Redis.REDISHOST}}
+REDIS_PORT=${{Redis.REDISPORT}}
+REDIS_PASSWORD=${{Redis.REDISPASSWORD}}
+
+MAIL_HOST=${{Mailpit.RAILWAY_PRIVATE_DOMAIN}}
+MAIL_PORT=1025
+
+JWT_SECRET=                           # a fresh random string, never the local one
+STRIPE_SECRET_KEY=sk_test_...         # sandbox only
+STRIPE_WEBHOOK_SECRET=whsec_...       # from the Stripe webhook endpoint, see below
+PAYMENT_SUCCESS_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}/api/health
+PAYMENT_CANCEL_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}/api/health
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Set `MP_UI_AUTH=<user>:<password>` on `Mailpit`: its inbox shows every activation link.
+
+### Stripe webhook
+
+Railway gives the API a public address, so Stripe calls it directly; the `stripe-cli` container is
+for local development only. In the Stripe sandbox, add a webhook endpoint at
+`https://<api domain>/api/payment-sessions/stripe-webhook` for the events
+`checkout.session.completed` and `checkout.session.expired`, and copy its signing secret into
+`STRIPE_WEBHOOK_SECRET`. That secret differs from the one `stripe-cli` prints locally.
+
+The app refuses to boot without `STRIPE_WEBHOOK_SECRET`, and the endpoint needs the domain, so
+the first deploy runs with a placeholder (`whsec_placeholder`), then the real value replaces it.
+
+Local and Railway share the sandbox, so each receives the other's events; an unknown session is
+logged and acknowledged with 200, never recorded.
 
 ## Observability
 
