@@ -6,6 +6,10 @@ import { EnvService } from '../config/env.service.js';
 import { mailTemplateOptions } from './mail-template-options.js';
 import { MailService } from './mail.service.js';
 
+// ioredis resolves IPv4 only by default; 0 accepts IPv6 too, which Railway's
+// private network (`*.railway.internal`) may hand out.
+const REDIS_ANY_IP_FAMILY = 0;
+
 // MailerQueueModule brings its own BullMQ queue and worker, so there is no
 // hand-written processor: enqueue() puts the rendered mail on Redis and the
 // worker hands it to MailerService.
@@ -31,6 +35,8 @@ import { MailService } from './mail.service.js';
         connection: {
           host: envService.get('REDIS_HOST'),
           port: envService.get('REDIS_PORT'),
+          password: envService.get('REDIS_PASSWORD'),
+          family: REDIS_ANY_IP_FAMILY,
         },
         queueName: 'mail',
         defaultJobOptions: {

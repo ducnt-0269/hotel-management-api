@@ -3,8 +3,9 @@ import { z } from 'zod';
 // Every variable the app reads. Validated once at boot by ConfigModule;
 // a missing or malformed value stops the process with a readable error.
 export const envSchema = z.object({
+  // `staging` is the Railway demo: deployed, but keeps the API docs mounted.
   NODE_ENV: z
-    .enum(['development', 'test', 'production'])
+    .enum(['development', 'test', 'staging', 'production'])
     .default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   // Base of the links the app puts in emails; no frontend exists, so they
@@ -19,6 +20,8 @@ export const envSchema = z.object({
 
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().int().positive().default(6379),
+  // Unset locally (the compose Redis has no auth); Railway's Redis requires it.
+  REDIS_PASSWORD: z.string().optional(),
 
   MAIL_HOST: z.string().default('localhost'),
   MAIL_PORT: z.coerce.number().int().positive().default(1025),
