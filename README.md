@@ -99,13 +99,18 @@ A demo copy runs on [Railway](https://railway.com) for mentor review. It is shor
 holds no real data. The deploy itself is `.github/workflows/deploy.yml`; the service settings
 below live in the Railway dashboard (Railway retires `railway.json` on 2026-12-01).
 
-**How a change ships:** a merge (any push) to `main` runs the `Quality gate` workflow → once it
-passes, the `Deploy` workflow uploads that exact commit with `railway up` → Railway builds it,
-the pre-deploy command migrates the database, and the new version takes traffic after
-`/api/health` answers → `Deploy` goes green only when the deployment reaches `SUCCESS`. A red
-Quality gate deploys nothing; a failed migration or health check stops the deploy, the old
-version keeps running, and `Deploy` goes red. Every run is recorded under the `railway`
-environment, so the repo's **Deployments** panel shows what is live and links to the demo.
+**How a change ships:** a pull request passes the `Quality gate` and is merged → the push to
+`main` starts the `Deploy` workflow at once, which uploads the commit with `railway up` → Railway
+builds it, the pre-deploy command migrates the database, and the new version takes traffic after
+`/api/health` answers → `Deploy` goes green only when the deployment reaches `SUCCESS`. A failed
+migration or health check stops the deploy, the old version keeps running, and `Deploy` goes red.
+Every run is recorded under the `railway` environment, so the repo's **Deployments** panel shows
+what is live and links to the demo.
+
+`Deploy` does not wait for the `Quality gate` that also runs on `main`; the pull request's gate is
+the check. Code that no gate tested can therefore ship when a branch merges behind `main` or a
+commit is pushed to `main` directly. Branch protection closes both: require pull requests, and
+require branches to be up to date before merging.
 
 The Railway service has no GitHub source connected, so the workflow is the only way code
 reaches it. It authenticates with the `RAILWAY_TOKEN` repository secret: a Railway project token
