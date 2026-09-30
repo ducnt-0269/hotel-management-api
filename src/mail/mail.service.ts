@@ -8,10 +8,13 @@ import { activationEmail } from './templates/activation-email.js';
 import { bookingRequestApprovalEmail } from './templates/booking-request-approval-email.js';
 import { bookingRequestExpirationEmail } from './templates/booking-request-expiration-email.js';
 import { bookingRequestRejectionEmail } from './templates/booking-request-rejection-email.js';
+import { monthlyRevenueReportEmail } from './templates/monthly-revenue-report-email.js';
 
 import type { BookingRequestMailData } from '../booking-requests/booking-request-mail-data.js';
+import type { RevenueStatisticsResponse } from '../statistics/schemas/revenue-statistics.schema.js';
 import type { User } from '../users/entities/user.entity.js';
 import type { ISendMailOptions } from '@nestjs-modules/mailer';
+import type { DateTime } from 'luxon';
 
 @Injectable()
 export class MailService {
@@ -80,6 +83,24 @@ export class MailService {
         this.i18nService,
         DEFAULT_LANGUAGE,
         data,
+      ),
+    });
+  }
+
+  // Admins have no stored language either; the report goes out in the default.
+  async enqueueMonthlyRevenueReportEmail(
+    admin: Pick<User, 'email' | 'fullName'>,
+    month: DateTime,
+    report: RevenueStatisticsResponse,
+  ): Promise<void> {
+    await this.enqueue({
+      to: admin.email,
+      ...monthlyRevenueReportEmail(
+        this.i18nService,
+        DEFAULT_LANGUAGE,
+        admin,
+        month,
+        report,
       ),
     });
   }

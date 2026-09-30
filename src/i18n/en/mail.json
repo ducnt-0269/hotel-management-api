@@ -46,5 +46,21 @@
       "heading": "Your booking request has expired",
       "body": "The request below was not handled before its hold ran out, so it has expired and the rooms have been released."
     }
+  },
+  "monthlyRevenueReport": {
+    "subject": "Revenue report for {month}",
+    "preview": "Revenue for {month}: {total} from {totalPayments} payment(s).",
+    "heading": "Revenue for {month}",
+    "greeting": "Hello {fullName},",
+    "body": "Here is the money the hotel took in {month}, by room type.",
+    "summary": {
+      "roomType": "Room type",
+      "revenue": "Revenue",
+      "payments": "Payments",
+      "total": "Total revenue"
+    },
+    "paymentCount": "{count} payment(s)",
+    "empty": "No payment was taken this month.",
+    "footer": "You are receiving this email because you are a Hotel Management administrator."
   }
 }

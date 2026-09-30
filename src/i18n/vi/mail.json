@@ -46,5 +46,21 @@
       "heading": "Yêu cầu đặt phòng đã hết hạn",
       "body": "Yêu cầu dưới đây chưa được xử lý trước hạn giữ phòng, nên đã hết hạn và số phòng đã được nhả."
     }
+  },
+  "monthlyRevenueReport": {
+    "subject": "Báo cáo doanh thu tháng {month}",
+    "preview": "Doanh thu tháng {month}: {total} từ {totalPayments} lượt thanh toán.",
+    "heading": "Doanh thu tháng {month}",
+    "greeting": "Xin chào {fullName},",
+    "body": "Dưới đây là số tiền khách sạn đã thu trong tháng {month}, chia theo loại phòng.",
+    "summary": {
+      "roomType": "Loại phòng",
+      "revenue": "Doanh thu",
+      "payments": "Lượt thanh toán",
+      "total": "Tổng doanh thu"
+    },
+    "paymentCount": "{count} lượt",
+    "empty": "Tháng này không có khoản thanh toán nào.",
+    "footer": "Bạn nhận được email này vì là quản trị viên của Hotel Management."
   }
 }
