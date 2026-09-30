@@ -197,6 +197,11 @@ describe('admin revenue statistics (e2e)', () => {
       ],
       ['from is after to', 'from=2026-04-01&to=2026-03-31&groupBy=month', 'to'],
       [
+        'the range is a day over two years',
+        'from=2025-01-01&to=2027-01-01&groupBy=month',
+        'to',
+      ],
+      [
         'roomTypeId is not an id',
         `${firstQuarter}&groupBy=month&roomTypeId=0`,
         'roomTypeId',
@@ -217,6 +222,18 @@ describe('admin revenue statistics (e2e)', () => {
       ).expect(200);
 
       expect(res.body.totalRevenue).toBe(1_000_000);
+    });
+
+    it('accepts exactly two years, both ends counted', async () => {
+      await stagePayment(standard, 1_000_000, '2025-01-01T03:00:00Z');
+      // 23:30 on Dec 31, 2026, hotel time: the last day of the range.
+      await stagePayment(standard, 2_000_000, '2026-12-31T16:30:00Z');
+
+      const res = await get(
+        'from=2025-01-01&to=2026-12-31&groupBy=month',
+      ).expect(200);
+
+      expect(res.body.totalRevenue).toBe(3_000_000);
     });
   });
 
