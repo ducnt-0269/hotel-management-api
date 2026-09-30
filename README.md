@@ -68,7 +68,8 @@ passes, the `Deploy` workflow uploads that exact commit with `railway up` → Ra
 the pre-deploy command migrates the database, and the new version takes traffic after
 `/api/health` answers → `Deploy` goes green only when the deployment reaches `SUCCESS`. A red
 Quality gate deploys nothing; a failed migration or health check stops the deploy, the old
-version keeps running, and `Deploy` goes red.
+version keeps running, and `Deploy` goes red. Every run is recorded under the `railway`
+environment, so the repo's **Deployments** panel shows what is live and links to the demo.
 
 The Railway service has no GitHub source connected, so the workflow is the only way code
 reaches it. It authenticates with the `RAILWAY_TOKEN` repository secret: a Railway project token

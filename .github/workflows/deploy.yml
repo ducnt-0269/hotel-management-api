@@ -31,6 +31,11 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
+    # Records each run as a GitHub deployment: the repo's Deployments panel
+    # shows the live version and links to the demo.
+    environment:
+      name: railway
+      url: https://hotel-management-api-production-915b.up.railway.app/api/docs
     # Bounds the whole deploy: build, migrations, boot and health check.
     timeout-minutes: 20
 
