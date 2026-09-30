@@ -3,8 +3,9 @@ import { z } from 'zod';
 // Every variable the app reads. Validated once at boot by ConfigModule;
 // a missing or malformed value stops the process with a readable error.
 export const envSchema = z.object({
+  // `staging` is the Railway demo: deployed, but keeps the API docs mounted.
   NODE_ENV: z
-    .enum(['development', 'test', 'production'])
+    .enum(['development', 'test', 'staging', 'production'])
     .default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   // Base of the links the app puts in emails; no frontend exists, so they
