@@ -1,0 +1,56 @@
+name: Deploy
+
+# Ships main to Railway once the Quality gate has passed on the very commit
+# being deployed. The Railway service has no GitHub source of its own, so
+# this workflow is the only way code reaches it.
+on:
+  workflow_run:
+    workflows: [Quality gate]
+    types: [completed]
+    branches: [main]
+
+# Deploys queue behind each other; a running one is never cancelled halfway.
+concurrency:
+  group: deploy-railway
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  RAILWAY_CLI_VERSION: 5.63.1
+  RAILWAY_SERVICE: hotel-management-api
+  # A project token scoped to the Railway environment being deployed.
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  deploy:
+    name: Railway
+    # Only a green run triggered by a push (a merge) to main, not a PR run.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    # Bounds the whole deploy: build, migrations, boot and health check.
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli@${{ env.RAILWAY_CLI_VERSION }}
+
+      # Uploads the checkout (minus .railwayignore) and follows the deployment
+      # it created: build logs stream here, and the step ends only when that
+      # deployment reaches SUCCESS (exit 0) or FAILED / CRASHED (exit 1), so a
+      # broken migration or health check fails the job.
+      - name: Deploy to Railway
+        run: >-
+          railway up --ci --service "$RAILWAY_SERVICE"
+          --message "${{ github.event.workflow_run.head_sha }}"
