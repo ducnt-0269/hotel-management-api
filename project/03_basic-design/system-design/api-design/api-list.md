@@ -127,7 +127,7 @@
 | F-015     | Sau commit approval / rejection / expiration | Một mail vào hàng đợi `mail` (BullMQ) → mail cho user kèm tóm tắt booking, rejection kèm lý do. Viết bằng tiếng Việt (ngôn ngữ mặc định): không có request của khách để lấy ngôn ngữ |
 | F-016     | Sau register                                 | Một mail vào hàng đợi `mail` → mail kèm link `/auth/activate?token=`, ngôn ngữ lấy từ request đăng ký |
 | F-008 E-4 | Cron mỗi 30 phút                             | `booking_requests` `pending` có `expiresAt < now()` → INSERT `booking_request_expirations` + UPDATE status → job mail. Kiểm tra chỗ trống đã bỏ qua hold quá hạn ngay lập tức, nên cron chỉ đồng bộ `status`; duyệt (F-011) phải tự kiểm tra `expiresAt`; từ chối và huỷ thì không |
-| F-020     | Cron 23:59 ngày cuối tháng                   | Tổng hợp doanh thu tháng (cùng service với No 30) → mail cho mọi admin                                                |
+| F-020     | Cron 00:05 ngày mùng 1 (giờ khách sạn)       | Tổng hợp doanh thu **tháng vừa kết thúc** (cùng service với No 30, `groupBy=roomType`) → mỗi admin `active` một mail tiếng Việt: tổng, số lượt, bảng theo loại phòng. Tháng không có thanh toán vẫn gửi, ghi 0 ₫ |
 
 ## 5. Open Items
 
@@ -163,3 +163,4 @@
 | 2026-09-28 | §2: `Review` bỏ `author` | Ở route của user, tác giả chính là người gọi; ở danh sách công khai, trả họ tên đầy đủ của khách cho người chưa đăng nhập là lộ thông tin cá nhân. Admin cần biết ai viết thì sẽ có bản admin riêng kèm `user`, như `AdminBookingRequest` |
 | 2026-09-28 | Dòng 24 nhận body `reason` (bắt buộc); `Review` thêm `rejection: { reason, createdAt } \| null` | Khách xem được trạng thái review (dòng 36) nhưng không gửi lại được sau khi bị từ chối, nên lý do là phản hồi duy nhất họ có. Cùng khuôn với từ chối booking (dòng 19) và `BookingRequest.rejection` |
 | 2026-09-28 | Dòng 22 trả `AdminReview` (= `Review` + `user`); `status` không còn mặc định `pending`, bỏ trống là mọi review, `createdAt` giảm dần | Admin cần biết ai viết, như `AdminBookingRequest`. Cùng quy ước với `/admin/booking-requests` (dòng 31): không lọc thì trả hết, lọc thì thu hẹp; một mặc định ngầm làm route trả một phần mà người gọi không hề yêu cầu. Màn duyệt tự gọi `?status=pending` |
+| 2026-09-30 | §4 F-020: cron chạy 00:05 ngày mùng 1 và báo cáo tháng trước, thay vì 23:59 ngày cuối tháng; chỉ gửi admin `active`, tháng 0 đồng vẫn gửi | Chạy lúc 23:59 thì khoản thanh toán trong phút cuối tháng không vào báo cáo nào. Admin bị khoá không còn điều hành khách sạn. Một tháng không có mail dễ bị hiểu là mail thất lạc, nên tháng không thu được gì vẫn báo 0 ₫ |
