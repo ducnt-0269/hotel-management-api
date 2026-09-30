@@ -16,6 +16,28 @@ interface UserSeed {
   status: UserStatus;
 }
 
+// [email, full name]: active guests, the pool a year of demo bookings and
+// reviews is spread across.
+const ACTIVE_GUESTS: [string, string][] = [
+  ['an.nguyen@example.com', 'Nguyễn Văn An'],
+  ['binh.tran@example.com', 'Trần Thị Bình'],
+  ['cuong.le@example.com', 'Lê Minh Cường'],
+  ['dung.pham@example.com', 'Phạm Thu Dung'],
+  ['em.hoang@example.com', 'Hoàng Gia Em'],
+  ['lan.dang@example.com', 'Đặng Thị Lan'],
+  ['minh.ngo@example.com', 'Ngô Đức Minh'],
+  ['nga.duong@example.com', 'Dương Thị Nga'],
+  ['oanh.ly@example.com', 'Lý Kim Oanh'],
+  ['phuc.trinh@example.com', 'Trịnh Văn Phúc'],
+  ['quyen.mai@example.com', 'Mai Thanh Quyên'],
+  ['son.phan@example.com', 'Phan Hữu Sơn'],
+  ['thao.vuong@example.com', 'Vương Ngọc Thảo'],
+  ['tuan.dinh@example.com', 'Đinh Anh Tuấn'],
+  ['uyen.ho@example.com', 'Hồ Bảo Uyên'],
+  ['van.truong@example.com', 'Trương Gia Vân'],
+  ['yen.chu@example.com', 'Chu Khánh Yến'],
+];
+
 // Demo data, meant to be edited. The admin comes first: it is the actor
 // recorded on the seeded deactivation.
 const USERS: UserSeed[] = [
@@ -23,36 +45,6 @@ const USERS: UserSeed[] = [
     email: 'admin@hotel.local',
     fullName: 'Quản Trị Viên',
     role: 'admin',
-    status: 'active',
-  },
-  {
-    email: 'an.nguyen@example.com',
-    fullName: 'Nguyễn Văn An',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'binh.tran@example.com',
-    fullName: 'Trần Thị Bình',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'cuong.le@example.com',
-    fullName: 'Lê Minh Cường',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'dung.pham@example.com',
-    fullName: 'Phạm Thu Dung',
-    role: 'user',
-    status: 'active',
-  },
-  {
-    email: 'em.hoang@example.com',
-    fullName: 'Hoàng Gia Em',
-    role: 'user',
     status: 'active',
   },
   {
@@ -73,6 +65,12 @@ const USERS: UserSeed[] = [
     role: 'user',
     status: 'deactivated',
   },
+  ...ACTIVE_GUESTS.map(([email, fullName]): UserSeed => ({
+    email,
+    fullName,
+    role: 'user',
+    status: 'active',
+  })),
 ];
 
 // Writes the user with its final status plus the outcome rows that status is
