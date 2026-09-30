@@ -81,6 +81,7 @@ Mọi bảng: `id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, mọi cột 
 | full_name     | varchar(100) |                                                                     |                                                                                         |
 | role          | varchar(10)  | CHECK IN ('user','admin')                                           | Visitor không phải giá trị DB (role-list §1)                                            |
 | status        | varchar(12)  | CHECK IN ('unverified','active','deactivated') DEFAULT 'unverified' | Projection của `user_email_verifications` / `user_deactivations` / `user_reactivations` |
+| token_version | integer      | NOT NULL DEFAULT 0                                                  | Ký vào JWT (`ver`); tăng khi logout, đổi mật khẩu, bị khoá → mọi token cũ bị từ chối     |
 | updated_at    | timestamptz  | DEFAULT now()                                                       |                                                                                         |
 
 **room_types**
@@ -272,3 +273,4 @@ rồi mới INSERT. Ràng buộc thật ở tầng DB cho NFR-005 (trigger hay b
 | 2026-09-25 | `payments` có hai timestamp: `paid_at` (lúc Stripe thu, lấy từ event) và `created_at` (lúc webhook tới) — lệch với quy tắc "một timestamp" ở §1 | Webhook có thể tới trễ (app chết, Stripe retry); tính doanh thu theo `created_at` sẽ đẩy khoản thu cuối tháng sang tháng sau. `paid_at` là thuộc tính của lần thu tiền, NOT NULL; `created_at` giữ nghĩa như mọi bảng |
 | 2026-09-25 | Transition của `payment_sessions` chạy `UPDATE … WHERE status='open'` trước rồi mới INSERT outcome, cùng lý do dòng 2026-09-22 | Stripe có thể gửi một event hai lần, kể cả đồng thời: lần sau dừng ở guard (`affected = 0`) thay vì đâm vào UNIQUE của bảng outcome |
 | 2026-09-28 | `review_rejections` thêm `reason text NOT NULL` | Sheet không bắt lý do, nhưng khách xem được trạng thái review và không gửi lại được sau khi bị từ chối, nên lý do là phản hồi duy nhất họ có. Cùng khuôn với `booking_request_rejections` |
+| 2026-09-30 | `users` thêm `token_version integer NOT NULL DEFAULT 0` | JWT stateless nên logout và đổi mật khẩu không thu hồi được token, còn mở khoá làm token cũ chưa hết hạn sống lại. Token mang version lúc ký; `JwtStrategy` vốn đã đọc user mỗi request nên so thêm cột này không tốn truy vấn, không cần Redis. Tăng bằng `token_version + 1` trong SQL; khi khoá thì tăng trong cùng transaction với `user_deactivations`. Đổi lại logout đăng xuất mọi thiết bị |
