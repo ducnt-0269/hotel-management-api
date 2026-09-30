@@ -63,36 +63,42 @@ A demo copy runs on [Railway](https://railway.com) for mentor review. It is shor
 holds no real data. Every setting below lives in the Railway dashboard, not in the repo
 (Railway retires `railway.json` on 2026-12-01).
 
-**How a change ships:** push to `main` → the `Quality gate` workflow runs → Railway, with
-**Wait for CI** on, builds only once it passes → the pre-deploy command migrates the database →
-the new version takes traffic after `/api/health` answers. A failed migration stops the deploy
-and the old version keeps running.
+**How a change ships:** a pull request merges into `main` only once the `Quality gate` workflow
+passes (branch protection) → the merge commit reaches `main` and Railway builds it straight away →
+the pre-deploy command migrates the database → the new version takes traffic after `/api/health`
+answers. A failed migration stops the deploy and the old version keeps running.
+
+Railway does not wait for CI itself; the gate is the merge. Branch protection must therefore
+require the check, require the branch to be up to date with `main` (so the merged code is the
+code CI tested), and apply to admins too.
 
 ### Services (one Railway project)
 
 | Service | Source | Notes |
 | --- | --- | --- |
-| `api` | this GitHub repo, branch `main` | Built by Railpack (Node from `.nvmrc`); public domain |
+| `hotel-management-api` | this GitHub repo, branch `main` | Built by Railpack (Node from `.nvmrc`); public domain |
 | `Postgres` | Railway Postgres template | |
 | `Redis` | Railway Redis template | Password-protected, hence `REDIS_PASSWORD` |
 | `Mailpit` | image `axllent/mailpit` | Catches all mail. Public domain on port `8025` for the inbox; SMTP `1025` stays private |
 
-### `api` settings
+### `hotel-management-api` settings
 
 | Setting | Value |
 | --- | --- |
 | Start command | `npm run start:prod` |
-| Pre-deploy command | `node ./node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run` |
+| Pre-deploy command | `npx typeorm -d dist/database/data-source.js migration:run` |
 | Healthcheck path | `/api/health` |
 | Replicas | `1` — the hold-expiry cron and the mail worker run in-process |
-| Source → Wait for CI | on |
+| Source → Wait for CI | off — merges are gated by branch protection instead |
+| Public domain | target port `3000` |
 
-### `api` variables
+### `hotel-management-api` variables
 
 Values in `${{...}}` are Railway reference variables; the rest are entered by hand.
 
 ```bash
 NODE_ENV=staging                      # deployed, but keeps /api/docs; `production` hides it
+PORT=3000                             # the port the public domain targets
 APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 
 DB_HOST=${{Postgres.PGHOST}}
