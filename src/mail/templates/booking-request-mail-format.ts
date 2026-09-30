@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 
 import { stayNights } from '../../booking-requests/booking-request-dates.js';
 import { HOTEL_TIME_ZONE } from '../../booking-requests/booking-request.constants.js';
+import { formatVnd } from './vnd-amount.js';
 
 import type { BookingRequestMailData } from '../../booking-requests/booking-request-mail-data.js';
 import type { I18nService } from 'nestjs-i18n';
@@ -30,10 +31,7 @@ export function bookingRequestDetails(
     checkOut: longDate(data.checkOutDate),
     nights: stayNights(data.checkInDate, data.checkOutDate),
     rooms: data.roomsRequested,
-    total: new Intl.NumberFormat(lang, {
-      style: 'currency',
-      currency: 'VND',
-    }).format(Number(data.totalAmount)),
+    total: formatVnd(lang, Number(data.totalAmount)),
   };
 }
 
