@@ -21,12 +21,13 @@ import type {
   RevenueStatisticsResponse,
   RevenueStatisticsRow,
 } from './schemas/revenue-statistics.schema.js';
+import type { SelectQueryBuilder } from 'typeorm';
 
 // Revenue is the money Stripe actually took (`payments.amount`), counted on
 // the moment it was taken (`paid_at`) — not the agreed price, and not when the
 // webhook arrived. Days and months are the hotel's, not UTC's.
 @Injectable()
-export class AdminRevenueStatisticsService {
+export class RevenueStatisticsService {
   constructor(
     @InjectRepository(Payment)
     private readonly paymentsRepository: Repository<Payment>,
@@ -35,17 +36,17 @@ export class AdminRevenueStatisticsService {
   async report(
     query: RevenueStatisticsQuery,
   ): Promise<RevenueStatisticsResponse> {
-    const data =
+    const rows =
       query.groupBy === 'month'
-        ? await this.byMonth(query)
-        : await this.byRoomType(query);
-    return toRevenueStatisticsResponse(query, data);
+        ? await this.getRevenueByMonth(query)
+        : await this.getRevenueByRoomType(query);
+    return toRevenueStatisticsResponse(query, rows);
   }
 
-  private async byMonth(
+  private async getRevenueByMonth(
     query: RevenueStatisticsQuery,
   ): Promise<RevenueStatisticsRow[]> {
-    const rows = await this.paymentsIn(query)
+    const rows = await this.createRevenueQuery(query)
       .addSelect(
         'to_char(payment.paid_at AT TIME ZONE :timeZone, :monthKeyFormat)',
         'month',
@@ -61,10 +62,10 @@ export class AdminRevenueStatisticsService {
     return rows.map(toMonthRevenueRow);
   }
 
-  private async byRoomType(
+  private async getRevenueByRoomType(
     query: RevenueStatisticsQuery,
   ): Promise<RevenueStatisticsRow[]> {
-    const rows = await this.paymentsIn(query)
+    const rows = await this.createRevenueQuery(query)
       .innerJoin('booking_request.roomType', 'room_type')
       .addSelect('room_type.id', 'roomTypeId')
       .addSelect('room_type.name', 'roomTypeName')
@@ -76,29 +77,31 @@ export class AdminRevenueStatisticsService {
     return rows.map(toRoomTypeRevenueRow);
   }
 
-  // The payments taken from the start of `from` up to, but not including,
-  // the start of the day after `to`, both in hotel time.
-  private paymentsIn({ from, to, roomTypeId }: RevenueStatisticsQuery) {
-    const start = DateTime.fromISO(from, { zone: HOTEL_TIME_ZONE });
-    const end = DateTime.fromISO(to, { zone: HOTEL_TIME_ZONE }).plus({
-      days: 1,
-    });
+  private createRevenueQuery({
+    from,
+    to,
+    roomTypeId,
+  }: RevenueStatisticsQuery): SelectQueryBuilder<Payment> {
+    const startInclusive = DateTime.fromISO(from, {
+      zone: HOTEL_TIME_ZONE,
+    }).toJSDate();
+    const endExclusive = DateTime.fromISO(to, { zone: HOTEL_TIME_ZONE })
+      .plus({ days: 1 })
+      .toJSDate();
 
-    const builder = this.paymentsRepository
+    const queryBuilder = this.paymentsRepository
       .createQueryBuilder('payment')
       .innerJoin('payment.bookingRequest', 'booking_request')
       .select('SUM(payment.amount)', 'revenue')
       .addSelect('COUNT(*)', 'payments')
-      .where('payment.paid_at >= :start AND payment.paid_at < :end', {
-        start: start.toJSDate(),
-        end: end.toJSDate(),
-      });
+      .where('payment.paid_at >= :startInclusive', { startInclusive })
+      .andWhere('payment.paid_at < :endExclusive', { endExclusive });
 
-    if (roomTypeId !== undefined) {
-      builder.andWhere('booking_request.room_type_id = :roomTypeId', {
+    if (roomTypeId) {
+      queryBuilder.andWhere('booking_request.room_type_id = :roomTypeId', {
         roomTypeId: String(roomTypeId),
       });
     }
-    return builder;
+    return queryBuilder;
   }
 }

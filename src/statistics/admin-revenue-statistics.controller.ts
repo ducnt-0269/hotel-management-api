@@ -5,7 +5,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorator.js';
 import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
-import { AdminRevenueStatisticsService } from './admin-revenue-statistics.service.js';
+import { RevenueStatisticsService } from './revenue-statistics.service.js';
 import {
   revenueStatisticsQuerySchema,
   revenueStatisticsResponseSchema,
@@ -23,7 +23,7 @@ import type {
 @Controller('admin/statistics/revenue')
 export class AdminRevenueStatisticsController {
   constructor(
-    private readonly adminRevenueStatisticsService: AdminRevenueStatisticsService,
+    private readonly revenueStatisticsService: RevenueStatisticsService,
   ) {}
 
   @Get()
@@ -36,6 +36,6 @@ export class AdminRevenueStatisticsController {
     @Query({ schema: revenueStatisticsQuerySchema })
     query: RevenueStatisticsQuery,
   ): Promise<RevenueStatisticsResponse> {
-    return this.adminRevenueStatisticsService.report(query);
+    return this.revenueStatisticsService.report(query);
   }
 }
