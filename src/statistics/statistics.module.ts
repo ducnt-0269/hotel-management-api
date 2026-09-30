@@ -12,5 +12,7 @@ import { RevenueStatisticsService } from './revenue-statistics.service.js';
   imports: [MailModule, TypeOrmModule.forFeature([Payment, User])],
   controllers: [AdminRevenueStatisticsController],
   providers: [RevenueStatisticsService, MonthlyRevenueReportService],
+  // Exported for the CLI, which runs the same report by hand.
+  exports: [MonthlyRevenueReportService],
 })
 export class StatisticsModule {}

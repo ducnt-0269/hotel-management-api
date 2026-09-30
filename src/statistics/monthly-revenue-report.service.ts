@@ -9,7 +9,7 @@ import { MailService } from '../mail/mail.service.js';
 import { User } from '../users/entities/user.entity.js';
 import {
   MONTHLY_REVENUE_REPORT_CRON,
-  REPORTED_MONTH_LOG_FORMAT,
+  REPORTED_MONTH_FORMAT,
 } from './monthly-revenue-report.constants.js';
 import { RevenueStatisticsService } from './revenue-statistics.service.js';
 
@@ -38,7 +38,7 @@ export class MonthlyRevenueReportService {
     try {
       const queued = await this.sendForMonth(lastMonth);
       this.logger.log(
-        `Queued the ${lastMonth.toFormat(REPORTED_MONTH_LOG_FORMAT)} revenue report for ${queued} admin(s)`,
+        `Queued the ${lastMonth.toFormat(REPORTED_MONTH_FORMAT)} revenue report for ${queued} admin(s)`,
       );
     } catch (error) {
       this.logger.error('Monthly revenue report failed', error);
