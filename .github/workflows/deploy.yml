@@ -1,12 +1,12 @@
 name: Deploy
 
-# Ships main to Railway once the Quality gate has passed on the very commit
-# being deployed. The Railway service has no GitHub source of its own, so
-# this workflow is the only way code reaches it.
+# Ships every push to main (a merged pull request) to Railway straight away.
+# It does not wait for the Quality gate on main, which runs alongside: the
+# pull request's own gate is what stands before a merge. The Railway service
+# has no GitHub source of its own, so this workflow is the only way code
+# reaches it.
 on:
-  workflow_run:
-    workflows: [Quality gate]
-    types: [completed]
+  push:
     branches: [main]
 
 # Deploys queue behind each other; a running one is never cancelled halfway.
@@ -26,18 +26,17 @@ env:
 jobs:
   deploy:
     name: Railway
-    # Only a green run triggered by a push (a merge) to main, not a PR run.
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
+    # Records each run as a GitHub deployment: the repo's Deployments panel
+    # shows the live version and links to the demo.
+    environment:
+      name: railway
+      url: https://hotel-management-api-production-915b.up.railway.app/api/docs
     # Bounds the whole deploy: build, migrations, boot and health check.
     timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: actions/setup-node@v7
         with:
@@ -53,4 +52,4 @@ jobs:
       - name: Deploy to Railway
         run: >-
           railway up --ci --service "$RAILWAY_SERVICE"
-          --message "${{ github.event.workflow_run.head_sha }}"
+          --message "$GITHUB_SHA"
