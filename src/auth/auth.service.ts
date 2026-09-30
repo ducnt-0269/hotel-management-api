@@ -63,7 +63,11 @@ export class AuthService {
       );
     }
 
-    const payload: JwtPayload = { sub: user.id, role: user.role };
+    const payload: JwtPayload = {
+      sub: user.id,
+      role: user.role,
+      ver: user.tokenVersion,
+    };
     return {
       accessToken: await this.jwtService.signAsync(payload),
       user: toUserResponse(user),

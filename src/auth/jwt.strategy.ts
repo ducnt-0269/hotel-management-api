@@ -10,6 +10,7 @@ import type { User, UserRole } from '../users/entities/user.entity.js';
 export interface JwtPayload {
   sub: string;
   role: UserRole;
+  ver: number;
 }
 
 @Injectable()
@@ -25,11 +26,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  // Re-read status on every request so deactivating an account kills the
-  // tokens already in the wild.
+  // Re-read the user on every request so deactivation, logout and a password
+  // change kill the tokens already in the wild.
   async validate(payload: JwtPayload): Promise<User> {
     const user = await this.usersService.findById(payload.sub);
-    if (!user || user.status !== 'active') {
+    if (
+      !user ||
+      user.status !== 'active' ||
+      user.tokenVersion !== payload.ver
+    ) {
       throw new UnauthorizedException();
     }
     return user;

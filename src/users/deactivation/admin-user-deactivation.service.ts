@@ -7,6 +7,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
 import { User } from '../entities/user.entity.js';
+import { revokeUserTokens } from '../user-token-revocation.js';
 import { UserDeactivation } from './entities/user-deactivation.entity.js';
 import { toUserDeactivationResponse } from './user-deactivation.mapper.js';
 
@@ -32,6 +33,8 @@ export class AdminUserDeactivationService {
 
     return this.dataSource.transaction(async (manager) => {
       await manager.update(User, user.id, { status: 'deactivated' });
+      // So a later reactivation does not bring the old tokens back.
+      await revokeUserTokens(manager, user.id);
       const deactivation = await manager.save(UserDeactivation, {
         userId: user.id,
         adminUserId: admin.id,
