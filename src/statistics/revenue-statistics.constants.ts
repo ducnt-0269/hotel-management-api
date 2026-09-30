@@ -1,6 +1,9 @@
 // The ways revenue can be split: by calendar month or by room type.
 export const REVENUE_GROUP_BYS = ['month', 'roomType'] as const;
 
+// The longest range one report may cover, `from` and `to` both included.
+export const MAX_RANGE_YEARS = 2;
+
 // Every amount is integer VND, the only currency the hotel takes.
 export const REVENUE_CURRENCY = 'VND';
 
