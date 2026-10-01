@@ -1,0 +1,62 @@
+<mj-text
+  font-size="22px"
+  font-weight="700"
+  color="#18181b"
+  padding-bottom="16px"
+>
+  {{t 'mail.monthlyRevenueReport.heading' this}}
+</mj-text>
+
+<mj-text
+  padding-bottom="8px"
+  >{{t 'mail.monthlyRevenueReport.greeting' this}}</mj-text
+>
+
+<mj-text
+  padding-bottom="24px"
+  >{{t 'mail.monthlyRevenueReport.body' this}}</mj-text
+>
+
+{{#unless hasRows}}
+<mj-text
+  padding-bottom="24px"
+  color="#71717a"
+  >{{t 'mail.monthlyRevenueReport.empty'}}</mj-text
+>
+{{/unless}}
+
+<mj-table
+  font-size="14px"
+  line-height="22px"
+  color="#27272a"
+  cellpadding="6"
+  padding="0 25px 24px"
+>
+  {{#if hasRows}}
+  <tr>
+    <td class="summary-label">
+      {{t 'mail.monthlyRevenueReport.summary.roomType'}}
+    </td>
+    <td class="summary-value">
+      {{t 'mail.monthlyRevenueReport.summary.revenue'}}
+    </td>
+    <td class="summary-value">
+      {{t 'mail.monthlyRevenueReport.summary.payments'}}
+    </td>
+  </tr>
+  {{#each rows}}
+  <tr>
+    <td class="summary-name">{{ name }}</td>
+    <td class="summary-value">{{ revenue }}</td>
+    <td class="summary-value">{{ payments }}</td>
+  </tr>
+  {{/each}}
+  {{/if}}
+  <tr class="summary-total">
+    <td class="summary-label">
+      {{t 'mail.monthlyRevenueReport.summary.total'}}
+    </td>
+    <td class="summary-value">{{ total }}</td>
+    <td class="summary-value">{{ totalPayments }}</td>
+  </tr>
+</mj-table>

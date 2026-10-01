@@ -16,6 +16,7 @@ import { MailModule } from './mail/mail.module.js';
 import { PaymentSessionsModule } from './payment-sessions/payment-sessions.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { RoomTypesModule } from './room-types/room-types.module.js';
+import { StatisticsModule } from './statistics/statistics.module.js';
 import { UsersModule } from './users/users.module.js';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
@@ -39,6 +40,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
     BookingRequestsModule,
     PaymentSessionsModule,
     ReviewsModule,
+    StatisticsModule,
   ],
 })
 export class AppModule {}

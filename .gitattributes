@@ -1,0 +1,2 @@
+# Every text file is LF in the repo and on disk, whatever the machine's git config.
+* text=auto eol=lf

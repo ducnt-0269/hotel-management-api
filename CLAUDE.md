@@ -28,6 +28,8 @@ npx vitest run src/auth/activation-token.spec.ts                  # one unit fil
 npx vitest run -t "should return"                                 # by test name
 npx vitest run --config vitest.config.e2e.ts test/health/health.e2e-spec.ts # one e2e file
 npm run migration:generate -- src/database/migrations/CreateUsers      # then migration:run | revert | show
+npm run cli -- --help                                             # commands run by hand (nest-commander; everything under src/cli/)
+npm run cli -- revenue:monthly-report -m 2026-09                  # queue the month-end revenue mail by hand; a running app's worker sends it
 
 curl -s localhost:8025/api/v1/messages                            # what Mailpit received
 curl -s "localhost:8025/api/v1/search?query=to%3Aa@example.com"   # find one; /api/v1/message/{id} for the body
@@ -64,6 +66,9 @@ lives in `src/auth/`, not `src/users/`. Injected properties are named after thei
   module root that both slices call. An outcome written as one step of a larger flow (email
   verification) stays in that flow. A slice is not a Nest module — the parent module registers it.
   No `index.ts` barrels, no slice inside a slice.
+- **Commands run by hand** (nest-commander) live apart from the modules, in `src/cli/`: `cli.ts` (entry),
+  `cli.module.ts` (registers every command) and `commands/<name>.command.ts`, which calls a service its
+  module exports.
 - **`admin-` prefix.** An admin route's controller and service always carry it
   (`admin-users.controller.ts`, `deactivation/admin-user-deactivation.service.ts`); a schema or
   mapper carries it only as the admin variant of a shape the user side also has. Entities never do.
