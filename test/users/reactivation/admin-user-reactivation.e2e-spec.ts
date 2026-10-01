@@ -80,6 +80,23 @@ describe('admin user reactivation (e2e)', () => {
       expect(reactivations).toBe(1);
     });
 
+    it('does not bring back the tokens issued before the deactivation', async () => {
+      const guest = await createUser(app);
+      const oldAuth = await signIn(app, guest.email, guest.password);
+      await api()
+        .post(`/api/admin/users/${guest.id}/deactivation`)
+        .set('Authorization', adminAuth)
+        .expect(201);
+      await api()
+        .post(`/api/admin/users/${guest.id}/reactivation`)
+        .set('Authorization', adminAuth)
+        .expect(201);
+
+      await api().get('/api/me').set('Authorization', oldAuth).expect(401);
+      const newAuth = await signIn(app, guest.email, guest.password);
+      await api().get('/api/me').set('Authorization', newAuth).expect(200);
+    });
+
     it('refuses a user who is not deactivated', async () => {
       const guest = await createUser(app);
 

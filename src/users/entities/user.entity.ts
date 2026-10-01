@@ -42,6 +42,11 @@ export class User {
   @Column({ type: 'varchar', length: 12, default: 'unverified' })
   status: UserStatus;
 
+  // Signed into every token; bumping it revokes all of them (logout,
+  // password change, deactivation).
+  @Column({ name: 'token_version', type: 'integer', default: 0 })
+  tokenVersion: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

@@ -198,4 +198,27 @@ describe('auth (e2e)', () => {
 
     await request(app.getHttpServer()).post('/api/auth/logout').expect(401);
   });
+
+  it('revokes every token the user holds on logout', async () => {
+    const user = await createUser(app);
+    const thisDevice = await signIn(app, user.email, user.password);
+    const otherDevice = await signIn(app, user.email, user.password);
+
+    await request(app.getHttpServer())
+      .post('/api/auth/logout')
+      .set('Authorization', thisDevice)
+      .expect(204);
+
+    for (const authorization of [thisDevice, otherDevice]) {
+      await request(app.getHttpServer())
+        .get('/api/me')
+        .set('Authorization', authorization)
+        .expect(401);
+    }
+    const fresh = await signIn(app, user.email, user.password);
+    await request(app.getHttpServer())
+      .get('/api/me')
+      .set('Authorization', fresh)
+      .expect(200);
+  });
 });

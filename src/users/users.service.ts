@@ -9,6 +9,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { hashPassword, verifyPassword } from '../common/security/password.js';
 import { isUniqueViolation } from '../database/is-unique-violation.js';
 import { User } from './entities/user.entity.js';
+import { revokeUserTokens } from './user-token-revocation.js';
 import { toUserResponse } from './user.mapper.js';
 
 import type {
@@ -79,7 +80,15 @@ export class UsersService {
     if (!(await verifyPassword(currentPassword, user.passwordHash))) {
       throw new UnauthorizedException('Current password is wrong');
     }
-    user.passwordHash = await hashPassword(newPassword);
-    await this.usersRepository.save(user);
+    const passwordHash = await hashPassword(newPassword);
+    await this.usersRepository.manager.transaction(async (manager) => {
+      await manager.update(User, user.id, { passwordHash });
+      await revokeUserTokens(manager, user.id);
+    });
+  }
+
+  // Ends the session on every device, not only the one calling.
+  logout(user: User): Promise<void> {
+    return revokeUserTokens(this.usersRepository.manager, user.id);
   }
 }

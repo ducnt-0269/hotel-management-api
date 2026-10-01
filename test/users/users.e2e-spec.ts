@@ -73,6 +73,22 @@ describe('me (e2e)', () => {
     await signIn(app, user.email, newPassword);
   });
 
+  it('revokes the tokens issued before a password change', async () => {
+    const user = await createUser(app);
+    const authorization = await signIn(app, user.email, user.password);
+
+    await request(app.getHttpServer())
+      .put('/api/me/password')
+      .set('Authorization', authorization)
+      .send({ currentPassword: user.password, newPassword: 'BrandNewPass1' })
+      .expect(204);
+
+    await request(app.getHttpServer())
+      .get('/api/me')
+      .set('Authorization', authorization)
+      .expect(401);
+  });
+
   it('refuses a password change when the current password is wrong', async () => {
     const user = await createUser(app);
     const authorization = await signIn(app, user.email, user.password);

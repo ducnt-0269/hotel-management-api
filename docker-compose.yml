@@ -61,18 +61,20 @@ services:
   #   docker compose --profile stripe up -d stripe-cli
   # Its signing secret (for STRIPE_WEBHOOK_SECRET) is in
   #   docker compose logs stripe-cli
+  # On the host network, `localhost` is the machine the app runs on. With the
+  # Docker Engine inside WSL that needs `networkingMode=mirrored` in .wslconfig;
+  # `host.docker.internal` would reach the WSL VM, not the Windows dev server.
   stripe-cli:
     image: stripe/stripe-cli:latest
     container_name: hotel-stripe-cli
     profiles: [stripe]
+    network_mode: host
     environment:
       STRIPE_API_KEY: ${STRIPE_SECRET_KEY:-}
     command: >-
       listen
       --events checkout.session.completed,checkout.session.expired
-      --forward-to host.docker.internal:3000/api/payment-sessions/stripe-webhook
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
+      --forward-to localhost:3000/api/payment-sessions/stripe-webhook
 
 volumes:
   pgdata:

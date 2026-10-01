@@ -6,8 +6,10 @@ import { ApiErrorResponse } from '../common/api-docs/api-error-response.decorato
 import { API_TAGS } from '../common/api-docs/api-tags.constants.js';
 import { RespondsWith } from '../common/api-docs/responds-with.decorator.js';
 import { userResponseSchema } from '../users/schemas/user.schema.js';
+import { UsersService } from '../users/users.service.js';
 import { AccountActivationService } from './account-activation.service.js';
 import { AuthService } from './auth.service.js';
+import { CurrentUser } from './decorators/current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
 import {
   activateQuerySchema,
@@ -16,6 +18,7 @@ import {
   registerBodySchema,
 } from './schemas/auth.schema.js';
 
+import type { User } from '../users/entities/user.entity.js';
 import type { UserResponse } from '../users/schemas/user.schema.js';
 import type { LoginBody, RegisterBody } from './schemas/auth.schema.js';
 
@@ -25,6 +28,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly accountActivationService: AccountActivationService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Public()
@@ -74,10 +78,11 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-  // Stateless: the client drops the token.
   @Post('logout')
   @HttpCode(204)
   @ApiBearerAuth()
-  @ApiNoContentResponse({ description: 'Signed out' })
-  logout(): void {}
+  @ApiNoContentResponse({ description: 'Signed out on every device' })
+  logout(@CurrentUser() user: User): Promise<void> {
+    return this.usersService.logout(user);
+  }
 }
